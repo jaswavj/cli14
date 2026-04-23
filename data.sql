@@ -53,7 +53,7 @@ CREATE TABLE `company_details` (
 /*Data for the table `company_details` */
 
 insert  into `company_details`(`id`,`shop_name`,`address`,`gstin`,`print_type`,`printer_name`,`bank_details`,`barcode_printer`) values 
-(2,'Javera Collections','4,TSMO Syed Ali Nagar\r\nKurichi Main Road\r\nTirunelveli-627005','',2,'','Bank name:SBI\r\nNo : 74748499\r\nIFSC:37ADD','AP4909');
+(2,'Rehoboth Clothing','1/1197A Tambaram Vellachery Main Road\r\nMedavakkam, Chennai\r\nCustomer Care:: 8056191358','33ABBFR0799K1ZW',1,'aAS15478','','');
 
 /*Table structure for table `configure_bank_details` */
 
@@ -601,8 +601,8 @@ insert  into `prod_batch`(`id`,`name`,`product_id`,`cost`,`mrp`,`commission`,`st
 (308,'ZM101',308,250.000,350.000,0.000,6.00,0,0.000,'2026-03-14','15:46:27',12.00,1),
 (309,'ZV01',309,10.000,20.000,0.000,54.00,0,0.000,'2026-04-23','14:08:24',20.00,1),
 (310,'ZV02',310,14.000,19.000,0.000,53.00,0,0.000,'2026-04-23','14:09:39',20.00,1),
-(311,'ZJ1',311,500.000,999.000,0.000,49.00,0,0.000,'2026-04-23','15:33:18',0.00,1),
-(312,'ZJ2',312,1000.000,1499.000,0.000,54.00,0,0.000,'2026-04-23','15:34:17',0.00,1);
+(311,'ZJ1',311,500.000,999.000,0.000,44.00,0,0.000,'2026-04-23','15:33:18',0.00,1),
+(312,'ZJ2',312,1000.000,1499.000,0.000,49.00,0,0.000,'2026-04-23','15:34:17',0.00,1);
 
 /*Table structure for table `prod_batch_updated` */
 
@@ -656,7 +656,7 @@ CREATE TABLE `prod_batch_zero_stock_bill` (
   KEY `batch` (`batch_id`),
   KEY `prod` (`product_id`),
   KEY `uid` (`uid`)
-) ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=latin1;
 
 /*Data for the table `prod_batch_zero_stock_bill` */
 
@@ -677,7 +677,10 @@ insert  into `prod_batch_zero_stock_bill`(`id`,`batch_id`,`product_id`,`qty`,`da
 (14,'296',296,1.00,'2026-04-22','12:24:16',1),
 (15,'296',296,1.00,'2026-04-22','14:07:48',1),
 (16,'296',296,1.00,'2026-04-22','14:17:29',1),
-(17,'296',296,1.00,'2026-04-22','15:00:45',1);
+(17,'296',296,1.00,'2026-04-22','15:00:45',1),
+(18,'296',296,1.00,'2026-04-23','23:17:08',1),
+(19,'296',296,1.00,'2026-04-23','23:22:54',1),
+(20,'296',296,1.00,'2026-04-23','23:50:08',1);
 
 /*Table structure for table `prod_bill` */
 
@@ -716,7 +719,7 @@ CREATE TABLE `prod_bill` (
   KEY `mode` (`paymentMode`),
   KEY `type` (`paymentType`),
   KEY `idx_is_tax_bill` (`is_tax_bill`)
-) ENGINE=InnoDB AUTO_INCREMENT=74 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=78 DEFAULT CHARSET=latin1;
 
 /*Data for the table `prod_bill` */
 
@@ -793,7 +796,11 @@ insert  into `prod_bill`(`id`,`bill_display`,`is_tax_bill`,`is_receipt`,`total`,
 (70,'26-67',1,1,39.000,0.000,0.000,39.000,39.000,0.000,0.000,0,1,0,1,'2026-04-23','14:50:14',0,1,'jasw','95957451419',8,3,NULL,NULL,NULL,NULL),
 (71,'26-68',1,1,2498.000,0.000,2.000,2496.000,2496.000,0.000,0.000,0,1,0,1,'2026-04-23','16:15:18',0,1,'jaswa','9898989898',1,3,NULL,NULL,NULL,NULL),
 (72,'26-69',1,1,156.000,0.000,0.000,156.000,195.000,0.000,0.000,0,1,0,1,'2026-04-23','22:45:26',0,1,'jaswa','9898989898',1,3,NULL,NULL,NULL,NULL),
-(73,'26-70',1,1,12490.000,0.000,0.000,12490.000,12490.000,0.000,0.000,0,1,0,1,'2026-04-23','23:12:07',0,1,'jasw','95957451419',8,3,NULL,NULL,NULL,NULL);
+(73,'26-70',1,1,12490.000,0.000,0.000,12490.000,12490.000,0.000,0.000,0,1,0,1,'2026-04-23','23:12:07',0,1,'jasw','95957451419',8,3,NULL,NULL,NULL,NULL),
+(74,'26-71',1,1,400.000,0.000,0.000,400.000,400.000,0.000,0.000,0,1,0,1,'2026-04-23','23:17:08',0,1,'-','-',NULL,3,NULL,NULL,NULL,NULL),
+(75,'26-72',1,1,400.000,0.000,0.000,400.000,400.000,0.000,0.000,0,1,0,1,'2026-04-23','23:22:54',0,1,'-','-',NULL,3,NULL,NULL,NULL,NULL),
+(76,'26-73',1,1,12490.000,0.000,0.000,12490.000,12490.000,0.000,0.000,0,1,0,1,'2026-04-23','23:28:37',0,1,'jaswa','9898989898',1,3,NULL,NULL,NULL,NULL),
+(77,'26-74',1,1,400.000,0.000,0.000,400.000,400.000,0.000,0.000,0,1,0,1,'2026-04-23','23:50:08',0,1,'jasw','95957451419',8,3,NULL,NULL,NULL,2);
 
 /*Table structure for table `prod_bill_cancel` */
 
@@ -851,7 +858,7 @@ CREATE TABLE `prod_bill_details` (
   PRIMARY KEY (`id`),
   KEY `bill` (`bill_id`),
   KEY `prod` (`prod_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=93 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=98 DEFAULT CHARSET=latin1;
 
 /*Data for the table `prod_bill_details` */
 
@@ -947,7 +954,12 @@ insert  into `prod_bill_details`(`id`,`bill_id`,`prod_id`,`qty`,`price`,`disc`,`
 (89,72,309,4.00,20.000,0.000,80.000,10.000,0.000,5,0,NULL,0),
 (90,72,310,4.00,19.000,0.000,76.000,14.000,0.000,5,0,NULL,0),
 (91,73,312,5.00,1499.000,0.000,7495.000,1000.000,0.000,5,0,NULL,0),
-(92,73,311,5.00,999.000,0.000,4995.000,500.000,0.000,5,0,NULL,0);
+(92,73,311,5.00,999.000,0.000,4995.000,500.000,0.000,5,0,NULL,0),
+(93,74,296,1.00,400.000,0.000,400.000,150.000,0.000,0,0,NULL,0),
+(94,75,296,1.00,400.000,0.000,400.000,150.000,0.000,0,0,NULL,0),
+(95,76,311,5.00,999.000,0.000,4995.000,500.000,0.000,5,0,NULL,0),
+(96,76,312,5.00,1499.000,0.000,7495.000,1000.000,0.000,5,0,NULL,0),
+(97,77,296,1.00,400.000,0.000,400.000,150.000,0.000,0,0,NULL,0);
 
 /*Table structure for table `prod_bill_due_collection` */
 
@@ -990,7 +1002,7 @@ CREATE TABLE `prod_bill_payment` (
   PRIMARY KEY (`id`),
   KEY `billid` (`bill_id`),
   KEY `paymentType` (`paymentType`)
-) ENGINE=InnoDB AUTO_INCREMENT=74 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=78 DEFAULT CHARSET=latin1;
 
 /*Data for the table `prod_bill_payment` */
 
@@ -1067,7 +1079,11 @@ insert  into `prod_bill_payment`(`id`,`bill_id`,`cash`,`bank`,`paymentType`) val
 (70,70,39.00,0.00,0),
 (71,71,2496.00,0.00,0),
 (72,72,195.00,0.00,0),
-(73,73,12490.00,0.00,0);
+(73,73,12490.00,0.00,0),
+(74,74,400.00,0.00,0),
+(75,75,400.00,0.00,0),
+(76,76,12490.00,0.00,0),
+(77,77,400.00,0.00,0);
 
 /*Table structure for table `prod_bill_payment_mode` */
 
@@ -1290,7 +1306,7 @@ CREATE TABLE `prod_lifecycle` (
   KEY `uid` (`uid`),
   KEY `stock` (`stockAdjType`),
   KEY `billId` (`bill_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=643 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=649 DEFAULT CHARSET=latin1;
 
 /*Data for the table `prod_lifecycle` */
 
@@ -1694,7 +1710,12 @@ insert  into `prod_lifecycle`(`id`,`bill_id`,`batch_id`,`product_id`,`stock_in`,
 (639,72,309,309,1.00,0.00,54.00,0,'PRODUCT RETURN','2026-04-23','22:55:54',1,1,1),
 (640,72,310,310,1.00,0.00,53.00,0,'PRODUCT RETURN','2026-04-23','23:00:00',1,1,1),
 (641,73,312,312,0.00,5.00,54.00,0,'WHILE BILLING','2026-04-23','23:12:07',1,1,0),
-(642,73,311,311,0.00,5.00,49.00,0,'WHILE BILLING','2026-04-23','23:12:07',1,1,0);
+(642,73,311,311,0.00,5.00,49.00,0,'WHILE BILLING','2026-04-23','23:12:07',1,1,0),
+(643,74,296,296,0.00,1.00,0.00,1,' BILL WITHOUT STOCK','2026-04-23','23:17:08',1,1,0),
+(645,75,296,296,0.00,1.00,0.00,1,' BILL WITHOUT STOCK','2026-04-23','23:22:54',1,1,0),
+(646,76,311,311,0.00,5.00,44.00,0,'WHILE BILLING','2026-04-23','23:28:37',1,1,0),
+(647,76,312,312,0.00,5.00,49.00,0,'WHILE BILLING','2026-04-23','23:28:37',1,1,0),
+(648,77,296,296,0.00,1.00,0.00,1,' BILL WITHOUT STOCK','2026-04-23','23:50:08',1,1,0);
 
 /*Table structure for table `prod_order` */
 
