@@ -225,7 +225,21 @@ try {
             System.out.println("Error marking quotation as billed: " + e.getMessage());
         }
     }
-    
+
+    // Deduct exchange points if used
+    double exchangePointUsed = 0.0;
+    String epUsedStr = request.getParameter("exchangePointUsed");
+    if (epUsedStr != null && !epUsedStr.trim().isEmpty()) {
+        try { exchangePointUsed = Double.parseDouble(epUsedStr.trim()); } catch (NumberFormatException ex) { }
+    }
+    if (exchangePointUsed > 0 && customerId > 0) {
+        try {
+            bill.useExchangePoint(customerId, billId, exchangePointUsed, uid);
+        } catch (Exception e) {
+            System.out.println("Error deducting exchange points: " + e.getMessage());
+        }
+    }
+
     out.print(billDisplay);
     
 } catch (Exception e) {

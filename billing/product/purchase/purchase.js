@@ -108,14 +108,22 @@ function autoComplete(event, str, str1) {
 						success: function (data) {
 							if (data) {
 								var suggestions = data.split("\n").map(function (item) {
-									return item.trim();
+									var trimmed = item.trim();
+									if (trimmed.length === 0) return null;
+									var parts = trimmed.split("<#>");
+									var name = parts[0] || trimmed;
+									var code = parts[1] || "";
+									return {
+										label: code ? name + " (" + code + ")" : name,
+										value: name
+									};
 								}).filter(function (item) {
-									return item.length > 0;
+									return item !== null;
 								});
 								if (suggestions.length > 0) {
 									response(suggestions);
 								} else {
-									response(['No Product Found']);
+									response([{label: 'No Product Found', value: ''}]);
 									$(".ui-menu-item:contains('No Product Found')")
 										.css('color', 'red')
 										.css('pointer-events', 'none')
@@ -131,7 +139,9 @@ function autoComplete(event, str, str1) {
 				},
 				minLength: 1,
 				select: function(event, ui) {
-					// When a valid item is selected, do nothing special
+					// Set the input to just the product name (without code in brackets)
+					$(this).val(ui.item.value);
+					return false;
 				},
 				change: function(event, ui) {
 					if (!ui.item && $(this).val().trim() !== '') {
@@ -183,6 +193,10 @@ function getProductDetails(str, str1) {
             if (resArr.length > 1) {		        
                 $('#_productName_' + str).val(resArr[0]);       
                 $('#_cost_' + str).val(resArr[4]);
+                $('#_mrp_' + str).val(resArr[5]);
+                if (resArr.length > 13 && resArr[13].trim() !== '') {
+                    $('#_tax_' + str).val(resArr[13].trim());
+                }
                 var unitName = (resArr.length > 10) ? resArr[10] : '';
                 $('#_productName_' + str).data('unitName', unitName);
                 // Show unit next to Qty/Pk and Total fields
@@ -198,6 +212,7 @@ function getProductDetails(str, str1) {
                 var convertionCalc = (resArr.length > 12) ? parseFloat(resArr[12]) || 1 : 1;
                 $('#_productName_' + str).data('convertionUnit', convertionUnit);
                 $('#_productName_' + str).data('convertionCalc', convertionCalc);
+                calculateRow(str);
             }
         }
     });
@@ -684,7 +699,7 @@ function proceedWithPurchaseSave() {
                 } else if (_result && _result.trim() !== '' && _result.trim() !== '0') {
                     Swal.fire({
                         title: 'Purchase Saved!',
-                        text: 'Purchase bill has been saved successfully. ' ,
+                        text: 'Purchase bill saved successfully. Bill No: ' + _result.trim(),
                         icon: 'success',
                         confirmButtonText: 'OK'
                     }).then(function() {

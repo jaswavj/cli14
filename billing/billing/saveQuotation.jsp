@@ -34,7 +34,7 @@ try {
                 customerId = existingCustomerId;
             } else {
                 // Insert new customer
-                prod.AddCustomer(customerName, "", customerPhn, "",0,0,0,50000);
+                prod.AddCustomer(customerName, "", customerPhn, "", 0, 0);
                 customerId = prod.checkTheCustomerNameExist(customerName);
             }
         }

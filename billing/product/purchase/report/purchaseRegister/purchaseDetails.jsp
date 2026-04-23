@@ -109,58 +109,69 @@ String purchaseId = request.getParameter("id");
             <table class="table table-bordered table-sm table-hover mb-0">
                 <thead class="table-light">
                     <tr>
-                        <th style="width: 50px;">S.No</th>
+                        <th style="width: 40px;">S.No</th>
                         <th>Product Name</th>
-                        <th class="text-end" style="width: 80px;">Pack</th>
-                        <th class="text-end" style="width: 80px;">Qty/Pk</th>
-                        <th class="text-end" style="width: 80px;">Qty</th>
-                        <th class="text-end" style="width: 80px;">Free</th>
+                        <th class="text-end" style="width: 70px;">Pack</th>
+                        <th class="text-end" style="width: 70px;">Qty/Pk</th>
+                        <th class="text-end" style="width: 70px;">Qty</th>
+                        <th class="text-end" style="width: 70px;">Free</th>
                         <th class="text-end" style="width: 100px;">Rate</th>
                         <th class="text-end" style="width: 100px;">MRP</th>
-                        <th class="text-end" style="width: 120px;">Total</th>
-                        <th class="text-end" style="width: 80px;">GST%</th>
-                        <th class="text-end" style="width: 100px;">CGST</th>
-                        <th class="text-end" style="width: 100px;">SGST</th>
-                        <th class="text-end" style="width: 100px;">IGST</th>
-                        <th class="text-end" style="width: 120px;">Net Amt</th>
+                        <th class="text-end" style="width: 110px;">Total</th>
+                        <th class="text-end" style="width: 70px;">GST%</th>
+                        <th class="text-end" style="width: 90px;">CGST</th>
+                        <th class="text-end" style="width: 90px;">SGST</th>
+                        <th class="text-end" style="width: 110px;">Net Amt</th>
+                        <th style="width: 160px;">Action</th>
                     </tr>
                 </thead>
                 <tbody>
                     <%
-                    // Get purchase details
-                    Vector purchaseDetails = prod.getPurchaseDetailsById(Integer.parseInt(purchaseId));
-                    double totalAmount = 0.0, totalCGST = 0.0, totalSGST = 0.0, totalIGST = 0.0, grandTotal = 0.0;
-                    
+                    Vector purchaseDetails = prod.getPurchaseDetailsForEdit(Integer.parseInt(purchaseId));
+                    double totalAmount = 0.0, totalCGST = 0.0, totalSGST = 0.0, grandTotal = 0.0;
+
                     if (purchaseDetails != null && !purchaseDetails.isEmpty()) {
                         for (int i = 0; i < purchaseDetails.size(); i++) {
                             Vector item = (Vector) purchaseDetails.get(i);
-                            double itemTotal = Double.parseDouble((String) item.elementAt(8));
-                            double cgst = Double.parseDouble((String) item.elementAt(13));
-                            double sgst = Double.parseDouble((String) item.elementAt(14));
-                            double igst = Double.parseDouble((String) item.elementAt(15));
-                            double netAmt = Double.parseDouble((String) item.elementAt(16));
+                            int    detId      = (Integer) item.elementAt(0);
+                            String prodName   = (String)  item.elementAt(1);
+                            double qty        = (Double)  item.elementAt(5);
+                            double free       = (Double)  item.elementAt(6);
+                            double rate       = (Double)  item.elementAt(7);
+                            double mrp        = (Double)  item.elementAt(8);
+                            double itemTotal  = (Double)  item.elementAt(9);
+                            double tax        = (Double)  item.elementAt(10);
+                            double cgst       = (Double)  item.elementAt(11);
+                            double sgst       = (Double)  item.elementAt(12);
+                            double netAmt     = (Double)  item.elementAt(13);
+                            int    cancelled  = (Integer) item.elementAt(14);
 
-                            totalAmount += itemTotal;
-                            totalCGST += cgst;
-                            totalSGST += sgst;
-                            totalIGST += igst;
-                            grandTotal += netAmt;
+                            if (cancelled == 0) { totalAmount += itemTotal; totalCGST += cgst; totalSGST += sgst; grandTotal += netAmt; }
                     %>
-                    <tr>
+                    <tr class="<%= cancelled==1 ? "table-secondary text-decoration-line-through text-muted" : "" %>">
                         <td><%= i+1 %></td>
-                        <td><%= item.elementAt(1) %></td>
-                        <td class="text-end"><%= item.elementAt(2) %></td>
-                        <td class="text-end"><%= item.elementAt(3) %></td>
-                        <td class="text-end"><%= item.elementAt(4) %></td>
-                        <td class="text-end"><%= item.elementAt(5) %></td>
-                        <td class="text-end"><%= item.elementAt(6) %></td>
-                        <td class="text-end"><%= item.elementAt(7) %></td>
+                        <td><%= prodName %> <% if (cancelled==1) { %><span class="badge bg-danger ms-1">Cancelled</span><% } %></td>
+                        <td class="text-end"><%= String.format("%.0f",(Double)item.elementAt(3)) %></td>
+                        <td class="text-end"><%= String.format("%.3f",(Double)item.elementAt(4)) %></td>
+                        <td class="text-end"><%= String.format("%.3f", qty) %></td>
+                        <td class="text-end"><%= String.format("%.3f", free) %></td>
+                        <td class="text-end"><%= String.format("%.3f", rate) %></td>
+                        <td class="text-end"><%= String.format("%.3f", mrp) %></td>
                         <td class="text-end"><%= String.format("%.3f", itemTotal) %></td>
-                        <td class="text-end"><%= item.elementAt(9) %></td>
+                        <td class="text-end"><%= String.format("%.2f", tax) %></td>
                         <td class="text-end"><%= String.format("%.3f", cgst) %></td>
                         <td class="text-end"><%= String.format("%.3f", sgst) %></td>
-                        <td class="text-end"><%= String.format("%.3f", igst) %></td>
                         <td class="text-end fw-bold"><%= String.format("%.3f", netAmt) %></td>
+                        <td class="text-center">
+                        <% if (cancelled == 0) { %>
+                            <button class="btn btn-xs btn-outline-primary py-0 px-1 me-1"
+                                    onclick="openEditModal(<%= detId %>, '<%= purchaseId %>', '<%= prodName.replace("'","\\'"  ) %>', <%= rate %>, <%= mrp %>)"
+                                    title="Edit Price"><i class="fas fa-edit"></i> Edit</button>
+                            <button class="btn btn-xs btn-outline-danger py-0 px-1"
+                                    onclick="cancelItem(<%= detId %>, '<%= purchaseId %>', '<%= prodName.replace("'","\\'"  ) %>')"
+                                    title="Cancel Item"><i class="fas fa-ban"></i> Cancel</button>
+                        <% } %>
+                        </td>
                     </tr>
                     <%
                         }
@@ -169,9 +180,7 @@ String purchaseId = request.getParameter("id");
                     <tr>
                         <td colspan="14" class="text-center py-3">No items found for this purchase.</td>
                     </tr>
-                    <%
-                    }
-                    %>
+                    <% } %>
                 </tbody>
             </table>
         </div>
@@ -184,12 +193,14 @@ String purchaseId = request.getParameter("id");
                         <a href="page.jsp" class="btn btn-secondary btn-sm px-4">
                             <i class="fas fa-arrow-left me-1"></i> Back
                         </a>
+                        <a href="<%=contextPath%>/product/purchase/purchaseReturn/page.jsp?purchaseId=<%= purchaseId %>" class="btn btn-warning btn-sm px-3 ms-2">
+                            <i class="fas fa-undo me-1"></i> Purchase Return
+                        </a>
                     </div>
                     <div class="col text-end">
                         <span class="me-3 text-muted">Sub Total: <span class="text-dark fw-bold">₹<%= String.format("%.3f", totalAmount) %></span></span>
                         <span class="me-3 text-muted">CGST: <span class="text-dark fw-bold">₹<%= String.format("%.3f", totalCGST) %></span></span>
                         <span class="me-3 text-muted">SGST: <span class="text-dark fw-bold">₹<%= String.format("%.3f", totalSGST) %></span></span>
-                        <span class="me-3 text-muted">IGST: <span class="text-dark fw-bold">₹<%= String.format("%.3f", totalIGST) %></span></span>
                         <span class="ms-2 fs-5">Grand Total: <span class="text-primary fw-bold">₹<%= String.format("%.3f", grandTotal) %></span></span>
                     </div>
                 </div>
@@ -233,5 +244,106 @@ String purchaseId = request.getParameter("id");
         }
         %>
     </div>
+
+<!-- ── Edit Price Modal ─────────────────────────────── -->
+<div class="modal fade" id="editPriceModal" tabindex="-1">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-header py-2">
+        <h6 class="modal-title"><i class="fas fa-edit me-1"></i> Edit Price</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p class="mb-2 fw-semibold" id="editProdName"></p>
+        <div class="mb-2">
+          <label class="form-label form-label-sm mb-0">Rate (Cost)</label>
+          <input type="number" step="0.001" min="0.001" id="editRate" class="form-control form-control-sm">
+        </div>
+        <div class="mb-2">
+          <label class="form-label form-label-sm mb-0">MRP</label>
+          <input type="number" step="0.001" min="0.001" id="editMrp" class="form-control form-control-sm">
+        </div>
+        <div class="mb-2">
+          <label class="form-label form-label-sm mb-0">Reason</label>
+          <input type="text" id="editReason" class="form-control form-control-sm" placeholder="optional">
+        </div>
+      </div>
+      <div class="modal-footer py-1">
+        <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn btn-primary btn-sm" onclick="submitEditPrice()">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const CTX = '<%=contextPath%>';
+let _editDetailId = 0, _editPurchaseId = 0;
+
+function openEditModal(detailId, purchaseId, prodName, rate, mrp) {
+    _editDetailId   = detailId;
+    _editPurchaseId = purchaseId;
+    document.getElementById('editProdName').textContent = prodName;
+    document.getElementById('editRate').value   = rate;
+    document.getElementById('editMrp').value    = mrp;
+    document.getElementById('editReason').value = '';
+    new bootstrap.Modal(document.getElementById('editPriceModal')).show();
+}
+
+function submitEditPrice() {
+    const rate   = parseFloat(document.getElementById('editRate').value);
+    const mrp    = parseFloat(document.getElementById('editMrp').value);
+    const reason = document.getElementById('editReason').value.trim();
+    if (!rate || rate <= 0 || !mrp || mrp <= 0) {
+        Swal.fire('Validation', 'Rate and MRP must be greater than 0.', 'warning');
+        return;
+    }
+    bootstrap.Modal.getInstance(document.getElementById('editPriceModal')).hide();
+    $.ajax({
+        url: CTX + '/product/purchase/editPurchaseItemPrice.jsp',
+        method: 'POST',
+        data: { detailId: _editDetailId, purchaseId: _editPurchaseId, newRate: rate, newMrp: mrp, reason: reason },
+        success: function(res) {
+            if (res.success) {
+                Swal.fire({ icon:'success', title:'Updated', text: res.message, timer:1800, showConfirmButton:false })
+                    .then(() => location.reload());
+            } else {
+                Swal.fire('Error', res.message, 'error');
+            }
+        },
+        error: function() { Swal.fire('Error', 'Server error.', 'error'); }
+    });
+}
+
+function cancelItem(detailId, purchaseId, prodName) {
+    Swal.fire({
+        title: 'Cancel Item?',
+        html: '<b>' + prodName + '</b><br><small class="text-muted">Stock will be reduced. This cannot be undone.</small>' +
+              '<br><br><input type="text" id="cancelReason" class="form-control form-control-sm" placeholder="Reason (optional)">',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        confirmButtonText: 'Yes, Cancel It',
+        cancelButtonText: 'Back',
+        preConfirm: () => document.getElementById('cancelReason').value
+    }).then(result => {
+        if (!result.isConfirmed) return;
+        $.ajax({
+            url: CTX + '/product/purchase/cancelPurchaseItem.jsp',
+            method: 'POST',
+            data: { detailId: detailId, purchaseId: purchaseId, reason: result.value },
+            success: function(res) {
+                if (res.success) {
+                    Swal.fire({ icon:'success', title:'Cancelled', text: res.message, timer:1800, showConfirmButton:false })
+                        .then(() => location.reload());
+                } else {
+                    Swal.fire('Error', res.message, 'error');
+                }
+            },
+            error: function() { Swal.fire('Error', 'Server error.', 'error'); }
+        });
+    });
+}
+</script>
 </body>
 </html>

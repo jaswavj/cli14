@@ -2478,7 +2478,8 @@ public Vector searchCustomers(String query) throws Exception {
             "CASE WHEN gstin = '' OR gstin IS NULL THEN '-' ELSE gstin END AS gstin, " +
             "COALESCE(credit_limit, 0) AS credit_limit, " +
             "COALESCE(is_gst, 0) AS is_gst, " +
-            "COALESCE(is_eligible_for_commission, 0) AS is_eligible_for_commission " +
+            "COALESCE(is_eligible_for_commission, 0) AS is_eligible_for_commission, " +
+            "COALESCE(exchange_point, 0) AS exchange_point " +
             "FROM customers " +
             "WHERE is_active = 1 AND name LIKE ? " +
             "ORDER BY name LIMIT 10"
@@ -2496,9 +2497,53 @@ public Vector searchCustomers(String query) throws Exception {
             vec.addElement(rs.getDouble(6));   // credit_limit
             vec.addElement(rs.getInt(7));      // is_gst
             vec.addElement(rs.getInt(8));      // is_eligible_for_commission
+            vec.addElement(rs.getDouble(9));   // exchange_point
             major.addElement(vec);
         }
         
+        return major;
+    } finally {
+        if (rs != null) try { rs.close(); } catch (SQLException e) { }
+        if (pt != null) try { pt.close(); } catch (SQLException e) { }
+        if (con != null) try { con.close(); } catch (Exception e) { }
+    }
+}
+/////////////////////////////////////////////////
+public Vector searchCustomersByPhone(String phone) throws Exception {
+    Connection con = null;
+    PreparedStatement pt = null;
+    ResultSet rs = null;
+    try {
+        con = util.DBConnectionManager.getConnectionFromPool();
+        Vector major = new Vector();
+        pt = con.prepareStatement(
+            "SELECT id, name, " +
+            "CASE WHEN phone_number = '' OR phone_number IS NULL THEN '-' ELSE phone_number END AS phone_number, " +
+            "CASE WHEN address = '' OR address IS NULL THEN '-' ELSE address END AS address, " +
+            "CASE WHEN gstin = '' OR gstin IS NULL THEN '-' ELSE gstin END AS gstin, " +
+            "COALESCE(credit_limit, 0) AS credit_limit, " +
+            "COALESCE(is_gst, 0) AS is_gst, " +
+            "COALESCE(is_eligible_for_commission, 0) AS is_eligible_for_commission, " +
+            "COALESCE(exchange_point, 0) AS exchange_point " +
+            "FROM customers " +
+            "WHERE is_active = 1 AND phone_number LIKE ? " +
+            "ORDER BY name LIMIT 10"
+        );
+        pt.setString(1, "%" + phone + "%");
+        rs = pt.executeQuery();
+        while (rs.next()) {
+            Vector vec = new Vector();
+            vec.addElement(rs.getInt(1));
+            vec.addElement(rs.getString(2));
+            vec.addElement(rs.getString(3));
+            vec.addElement(rs.getString(4));
+            vec.addElement(rs.getString(5));
+            vec.addElement(rs.getDouble(6));
+            vec.addElement(rs.getInt(7));
+            vec.addElement(rs.getInt(8));
+            vec.addElement(rs.getDouble(9));
+            major.addElement(vec);
+        }
         return major;
     } finally {
         if (rs != null) try { rs.close(); } catch (SQLException e) { }
@@ -2814,6 +2859,162 @@ public Vector getStockAdjReport(String from, String to, int productId, int stock
 // Overloaded method for backward compatibility
 public Vector getStockAdjReport(String from, String to, int productId) throws Exception {
     return getStockAdjReport(from, to, productId, 0);
+}
+
+/**
+ * Returns one summary row per active category for the given date range.
+ * Row layout:
+ *   0  category_id       (int)
+ *   1  category_name     (String)
+ *   2  total_qty         (double) – sum of qty sold
+ *   3  total_amount      (double) – sum of bill-detail totals
+ *   4  bill_count        (int)    – distinct bills containing this category
+ *   5  product_count     (int)    – distinct products sold
+ *   6  top_product       (String) – product with highest qty in period
+ *   7  top_product_qty   (double)
+ */
+public Vector getCategorySalesStats(String fromDate, String toDate) throws Exception {
+    Connection con = null;
+    PreparedStatement pt = null;
+    ResultSet rs = null;
+    try {
+        con = util.DBConnectionManager.getConnectionFromPool();
+        Vector vec = new Vector();
+
+        // Category summary
+        String sql =
+            "SELECT c.id, c.name," +
+            "  COALESCE(SUM(bd.qty), 0)      AS total_qty," +
+            "  COALESCE(SUM(bd.total), 0)    AS total_amount," +
+            "  COUNT(DISTINCT b.id)          AS bill_count," +
+            "  COUNT(DISTINCT p.id)          AS product_count" +
+            " FROM prod_category c" +
+            " LEFT JOIN prod_product p ON p.category_id = c.id" +
+            " LEFT JOIN prod_bill_details bd ON bd.prod_id = p.id" +
+            " LEFT JOIN prod_bill b ON b.id = bd.bill_id AND b.is_cancelled = 0" +
+            "   AND b.date BETWEEN ? AND ?" +
+            " WHERE c.is_active = 1" +
+            " GROUP BY c.id, c.name" +
+            " ORDER BY total_amount DESC";
+
+        pt = con.prepareStatement(sql);
+        pt.setString(1, fromDate);
+        pt.setString(2, toDate);
+        rs = pt.executeQuery();
+
+        while (rs.next()) {
+            int catId = rs.getInt(1);
+            Vector row = new Vector();
+            row.addElement(catId);                      // 0 category_id
+            row.addElement(rs.getString(2));            // 1 category_name
+            row.addElement(rs.getDouble(3));            // 2 total_qty
+            row.addElement(rs.getDouble(4));            // 3 total_amount
+            row.addElement(rs.getInt(5));               // 4 bill_count
+            row.addElement(rs.getInt(6));               // 5 product_count
+            row.addElement("");                         // 6 top_product (filled below)
+            row.addElement(0.0);                        // 7 top_product_qty
+            vec.addElement(row);
+        }
+        rs.close(); pt.close();
+
+        // Top product per category
+        String topSql =
+            "SELECT p.category_id, p.name, SUM(bd.qty) AS tq" +
+            " FROM prod_bill_details bd" +
+            " JOIN prod_product p ON p.id = bd.prod_id" +
+            " JOIN prod_bill b ON b.id = bd.bill_id AND b.is_cancelled = 0" +
+            "   AND b.date BETWEEN ? AND ?" +
+            " GROUP BY p.category_id, p.id, p.name";
+
+        pt = con.prepareStatement(topSql);
+        pt.setString(1, fromDate);
+        pt.setString(2, toDate);
+        rs = pt.executeQuery();
+
+        // Build map: catId -> (topName, topQty)
+        java.util.HashMap<Integer,Object[]> topMap = new java.util.HashMap<>();
+        while (rs.next()) {
+            int cid  = rs.getInt(1);
+            String nm = rs.getString(2);
+            double tq = rs.getDouble(3);
+            if (!topMap.containsKey(cid) || tq > (Double) topMap.get(cid)[1]) {
+                topMap.put(cid, new Object[]{nm, tq});
+            }
+        }
+        rs.close(); pt.close();
+
+        // Merge top product into summary rows
+        for (int i = 0; i < vec.size(); i++) {
+            Vector row = (Vector) vec.get(i);
+            int cid = (Integer) row.get(0);
+            if (topMap.containsKey(cid)) {
+                row.set(6, topMap.get(cid)[0]);
+                row.set(7, topMap.get(cid)[1]);
+            }
+        }
+
+        return vec;
+    } finally {
+        if (rs  != null) try { rs.close();  } catch (SQLException e) {}
+        if (pt  != null) try { pt.close();  } catch (SQLException e) {}
+        if (con != null) try { con.close(); } catch (Exception   e) {}
+    }
+}
+
+/**
+ * Returns product-level detail rows for a single category in the date range.
+ * Row layout:
+ *   0  product_id   (int)
+ *   1  product_name (String)
+ *   2  total_qty    (double)
+ *   3  total_amount (double)
+ *   4  bill_count   (int)
+ *   5  avg_price    (double)
+ */
+public Vector getCategoryProductDetails(int categoryId, String fromDate, String toDate) throws Exception {
+    Connection con = null;
+    PreparedStatement pt = null;
+    ResultSet rs = null;
+    try {
+        con = util.DBConnectionManager.getConnectionFromPool();
+        Vector vec = new Vector();
+
+        String sql =
+            "SELECT p.id, p.name," +
+            "  COALESCE(SUM(bd.qty), 0)           AS total_qty," +
+            "  COALESCE(SUM(bd.total), 0)          AS total_amount," +
+            "  COUNT(DISTINCT b.id)                AS bill_count," +
+            "  COALESCE(AVG(bd.price), 0)          AS avg_price" +
+            " FROM prod_product p" +
+            " LEFT JOIN prod_bill_details bd ON bd.prod_id = p.id" +
+            " LEFT JOIN prod_bill b ON b.id = bd.bill_id AND b.is_cancelled = 0" +
+            "   AND b.date BETWEEN ? AND ?" +
+            " WHERE p.category_id = ?" +
+            " GROUP BY p.id, p.name" +
+            " ORDER BY total_amount DESC";
+
+        pt = con.prepareStatement(sql);
+        pt.setString(1, fromDate);
+        pt.setString(2, toDate);
+        pt.setInt(3, categoryId);
+        rs = pt.executeQuery();
+
+        while (rs.next()) {
+            Vector row = new Vector();
+            row.addElement(rs.getInt(1));      // 0 product_id
+            row.addElement(rs.getString(2));   // 1 product_name
+            row.addElement(rs.getDouble(3));   // 2 total_qty
+            row.addElement(rs.getDouble(4));   // 3 total_amount
+            row.addElement(rs.getInt(5));      // 4 bill_count
+            row.addElement(rs.getDouble(6));   // 5 avg_price
+            vec.addElement(row);
+        }
+        return vec;
+    } finally {
+        if (rs  != null) try { rs.close();  } catch (SQLException e) {}
+        if (pt  != null) try { pt.close();  } catch (SQLException e) {}
+        if (con != null) try { con.close(); } catch (Exception   e) {}
+    }
 }
 
 public Vector getAllProduct()throws Exception
@@ -3193,13 +3394,15 @@ public Vector getAutoLoadDetails(String name,int typeId) throws Exception
 	
 		Vector vec			= new Vector();
 		
-		pt = con.prepareStatement("SELECT a.name FROM `prod_product` a WHERE a.NAME LIKE ? AND a.is_active=1 ORDER BY a.NAME ASC LIMIT 50");
-		pt.setString(1,"%"+name+"%");								
+		pt = con.prepareStatement("SELECT a.name, a.code FROM `prod_product` a WHERE (a.NAME LIKE ? OR a.code LIKE ?) AND a.is_active=1 ORDER BY a.NAME ASC LIMIT 50");
+		pt.setString(1,"%"+name+"%");
+		pt.setString(2,"%"+name+"%");
 		rs = pt.executeQuery();
 		while(rs.next())
 			{
 			Vector vec1		= new Vector();
 			vec1.addElement(rs.getString(1));
+			vec1.addElement(rs.getString(2) != null ? rs.getString(2) : "");
 			vec.addElement(vec1);
 			}
 		return vec;
@@ -3240,7 +3443,7 @@ public String getProductFullDetails(String productName) throws Exception
 		String Qry				= "";
 		
 
-		pt = con.prepareStatement("SELECT a.name AS prodsName,b.name AS catName,c.name AS brandName,d.name AS batchNo,d.cost,d.mrp,a.id AS prodsId,b.id AS catId,c.id AS brandId,d.id AS batchId,COALESCE(u.name,'') AS unitName,COALESCE(u.convertion_unit,'') AS convertion_unit,COALESCE(u.convertion_calculation,1) AS convertion_calculation FROM prod_product a JOIN prod_category b ON a.category_id=b.id JOIN prod_brands c ON a.brand_id=c.id JOIN prod_batch d ON a.id=d.product_id LEFT JOIN prod_units u ON u.id=a.unit_id WHERE a.name=?");
+		pt = con.prepareStatement("SELECT a.name AS prodsName,b.name AS catName,c.name AS brandName,d.name AS batchNo,d.cost,d.mrp,a.id AS prodsId,b.id AS catId,c.id AS brandId,d.id AS batchId,COALESCE(u.name,'') AS unitName,COALESCE(u.convertion_unit,'') AS convertion_unit,COALESCE(u.convertion_calculation,1) AS convertion_calculation,COALESCE(a.gst,0) AS gst FROM prod_product a JOIN prod_category b ON a.category_id=b.id JOIN prod_brands c ON a.brand_id=c.id JOIN prod_batch d ON a.id=d.product_id LEFT JOIN prod_units u ON u.id=a.unit_id WHERE a.name=?");
 		pt.setString(1,productName);									  
 		rs = pt.executeQuery();
 		if(rs.next())
@@ -3256,10 +3459,11 @@ public String getProductFullDetails(String productName) throws Exception
 			String brandId		= rs.getString(9);
 			String batchId		= rs.getString(10);
 			String unitName		= rs.getString(11);
-								
+							
 			String convertionUnit	= rs.getString(12);
 			String convertionCalc	= rs.getString(13);
-			productDetails		= prodName+"<#>"+catName+"<#>"+brandName+"<#>"+batchNo+"<#>"+cost+"<#>"+mrp+"<#>"+prodsId+"<#>"+catId+"<#>"+brandId+"<#>"+batchId+"<#>"+unitName+"<#>"+convertionUnit+"<#>"+convertionCalc+"<#>";
+			String gst				= rs.getString(14);
+			productDetails		= prodName+"<#>"+catName+"<#>"+brandName+"<#>"+batchNo+"<#>"+cost+"<#>"+mrp+"<#>"+prodsId+"<#>"+catId+"<#>"+brandId+"<#>"+batchId+"<#>"+unitName+"<#>"+convertionUnit+"<#>"+convertionCalc+"<#>"+gst+"<#>";
 			}
 		else
 			productDetails		= "Invalid Input";
@@ -3760,7 +3964,7 @@ public String savePurchaseBill(String invArr, String payArr, String prodArr, int
         pt = con.prepareStatement("SELECT COUNT(id)+1 FROM prod_purchase");
         rs = pt.executeQuery();
         if (rs.next())
-            purchaseNo = "PR" + rs.getString(1);
+            purchaseNo = "GRN-" + rs.getString(1);
 
         pt = con.prepareStatement("INSERT INTO prod_purchase(prno,invno,invdate,total,paid,balance,discount,net,ent_uid,pay_type,bank_id,deal_id,offer,offer_date,lr_no,lr_date,lr_name,ent_date,ent_time) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,NOW(),NOW())");
         pt.setString(1, purchaseNo);
@@ -3961,7 +4165,7 @@ public String savePurchaseBill(String invArr, String payArr, String prodArr, int
             }
         }
         
-        return bill + "";
+        return purchaseNo;
 
     } catch (Exception e) {
         // Rollback on error
@@ -4048,7 +4252,7 @@ public String savePurchaseBill(String invArr, String payArr, String prodArr, int
         pt.close();
         
         lastPrNo++;
-        purchaseNo = "PR" + lastPrNo;
+        purchaseNo = "GRN-" + lastPrNo;
         
         pt = con.prepareStatement("UPDATE prod_purchase_counter SET last_pr_no = ? WHERE id = 1");
         pt.setInt(1, lastPrNo);
@@ -6689,4 +6893,1023 @@ public boolean unblockAttender(int id) throws Exception {
 }
 
 ///////////////////////-----------------------------
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Purchase Edit / Cancel / Return methods
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Returns purchase details including is_cancelled status (for edit/cancel UI).
+ */
+public Vector getPurchaseDetailsForEdit(int purchaseId) throws Exception {
+    Connection con = null;
+    PreparedStatement ps = null;
+    ResultSet rs = null;
+    Vector vec = new Vector();
+    try {
+        con = util.DBConnectionManager.getConnectionFromPool();
+        String sql = "SELECT pd.id, p.name AS product_name, pd.prods_id, " +
+                     "pd.pack, pd.qtypack, pd.quantity, pd.free, " +
+                     "pd.rate, pd.mrp, pd.totalamt, pd.tax, " +
+                     "pd.cgst_amt, pd.sgst_amt, pd.netamt, " +
+                     "IFNULL(pd.is_cancelled, 0) AS is_cancelled " +
+                     "FROM prod_purchase_details pd " +
+                     "JOIN prod_product p ON pd.prods_id = p.id " +
+                     "WHERE pd.prid = ?";
+        ps = con.prepareStatement(sql);
+        ps.setInt(1, purchaseId);
+        rs = ps.executeQuery();
+        while (rs.next()) {
+            Vector row = new Vector();
+            row.addElement(rs.getInt(1));      // 0 id
+            row.addElement(rs.getString(2));   // 1 product_name
+            row.addElement(rs.getInt(3));      // 2 prods_id
+            row.addElement(rs.getDouble(4));   // 3 pack
+            row.addElement(rs.getDouble(5));   // 4 qtypack
+            row.addElement(rs.getDouble(6));   // 5 quantity
+            row.addElement(rs.getDouble(7));   // 6 free
+            row.addElement(rs.getDouble(8));   // 7 rate
+            row.addElement(rs.getDouble(9));   // 8 mrp
+            row.addElement(rs.getDouble(10));  // 9 totalamt
+            row.addElement(rs.getDouble(11));  // 10 tax
+            row.addElement(rs.getDouble(12));  // 11 cgst_amt
+            row.addElement(rs.getDouble(13));  // 12 sgst_amt
+            row.addElement(rs.getDouble(14));  // 13 netamt
+            row.addElement(rs.getInt(15));     // 14 is_cancelled
+            vec.add(row);
+        }
+    } finally {
+        if (rs  != null) try { rs.close();  } catch (Exception e) { ; }
+        if (ps  != null) try { ps.close();  } catch (Exception e) { ; }
+        if (con != null) try { con.close(); } catch (Exception e) { ; }
+    }
+    return vec;
+}
+
+/**
+ * Edit price (rate and/or mrp) of a purchase detail line.
+ * - Updates prod_purchase_details rate, mrp, totalamt, netamt
+ * - Updates prod_batch cost/mrp for the product
+ * - Re-calculates prod_purchase.total / .net
+ * - Logs to prod_purchase_edit_log
+ */
+public String editPurchaseItemPrice(int detailId, int purchaseId, double newRate, double newMrp, String reason, int uid) throws Exception {
+    Connection con = null;
+    PreparedStatement ps = null;
+    ResultSet rs = null;
+    try {
+        con = util.DBConnectionManager.getConnectionFromPool();
+        con.setAutoCommit(false);
+
+        // Fetch current detail row
+        ps = con.prepareStatement(
+            "SELECT prods_id, quantity, rate, mrp, tax FROM prod_purchase_details WHERE id = ? AND prid = ? AND IFNULL(is_cancelled,0) = 0");
+        ps.setInt(1, detailId);
+        ps.setInt(2, purchaseId);
+        rs = ps.executeQuery();
+        if (!rs.next()) {
+            throw new Exception("Item not found or already cancelled.");
+        }
+        int productId  = rs.getInt(1);
+        double qty     = rs.getDouble(2);
+        double oldRate = rs.getDouble(3);
+        double oldMrp  = rs.getDouble(4);
+        double tax     = rs.getDouble(5);
+        rs.close(); ps.close();
+
+        double newTotal   = new java.math.BigDecimal(qty * newRate).setScale(3, java.math.RoundingMode.HALF_UP).doubleValue();
+        double newTaxAmt  = new java.math.BigDecimal(newTotal * tax / 100).setScale(3, java.math.RoundingMode.HALF_UP).doubleValue();
+        double newNetAmt  = new java.math.BigDecimal(newTotal + newTaxAmt).setScale(3, java.math.RoundingMode.HALF_UP).doubleValue();
+        double newCgstAmt = new java.math.BigDecimal(newTaxAmt / 2).setScale(3, java.math.RoundingMode.HALF_UP).doubleValue();
+        double newSgstAmt = newCgstAmt;
+
+        // Update prod_purchase_details
+        ps = con.prepareStatement(
+            "UPDATE prod_purchase_details SET rate=?, mrp=?, totalamt=?, tax_amt=?, netamt=?, cgst_amt=?, sgst_amt=? WHERE id=?");
+        ps.setDouble(1, newRate);
+        ps.setDouble(2, newMrp);
+        ps.setDouble(3, newTotal);
+        ps.setDouble(4, newTaxAmt);
+        ps.setDouble(5, newNetAmt);
+        ps.setDouble(6, newCgstAmt);
+        ps.setDouble(7, newSgstAmt);
+        ps.setInt(8, detailId);
+        ps.executeUpdate(); ps.close();
+
+        // Update prod_batch cost / mrp for this product
+        ps = con.prepareStatement(
+            "UPDATE prod_batch SET cost=?, mrp=? WHERE product_id=?");
+        ps.setDouble(1, newRate);
+        ps.setDouble(2, newMrp);
+        ps.setInt(3, productId);
+        ps.executeUpdate(); ps.close();
+
+        // Recalculate prod_purchase header totals from detail rows
+        ps = con.prepareStatement(
+            "UPDATE prod_purchase pp SET pp.total = (SELECT IFNULL(SUM(pd.totalamt),0) FROM prod_purchase_details pd WHERE pd.prid = pp.id AND IFNULL(pd.is_cancelled,0) = 0), " +
+            "pp.net = (SELECT IFNULL(SUM(pd.netamt),0) FROM prod_purchase_details pd WHERE pd.prid = pp.id AND IFNULL(pd.is_cancelled,0) = 0) " +
+            "WHERE pp.id = ?");
+        ps.setInt(1, purchaseId);
+        ps.executeUpdate(); ps.close();
+
+        // Log the edit
+        ps = con.prepareStatement(
+            "INSERT INTO prod_purchase_edit_log(purchase_id, purchase_detail_id, product_id, edit_type, old_rate, new_rate, old_mrp, new_mrp, qty, reason, uid, date_time) " +
+            "VALUES(?,?,?,'price_edit',?,?,?,?,?,?,?,NOW())");
+        ps.setInt(1, purchaseId);
+        ps.setInt(2, detailId);
+        ps.setInt(3, productId);
+        ps.setDouble(4, oldRate);
+        ps.setDouble(5, newRate);
+        ps.setDouble(6, oldMrp);
+        ps.setDouble(7, newMrp);
+        ps.setDouble(8, qty);
+        ps.setString(9, reason != null ? reason : "");
+        ps.setInt(10, uid);
+        ps.executeUpdate(); ps.close();
+
+        con.commit();
+        return "Price updated successfully.";
+    } catch (Exception e) {
+        if (con != null) { try { con.rollback(); } catch (Exception ex) { ; } }
+        throw e;
+    } finally {
+        if (rs  != null) try { rs.close();  } catch (Exception e) { ; }
+        if (ps  != null) try { ps.close();  } catch (Exception e) { ; }
+        if (con != null) try { con.close(); } catch (Exception e) { ; }
+    }
+}
+
+/**
+ * Cancel a purchase detail line.
+ * - Validates current stock >= qty to deduct.
+ * - Reduces stock in prod_batch, prod_stock_totals.
+ * - Inserts prod_lifecycle (stock_out, type=2).
+ * - Marks prod_purchase_details.is_cancelled = 1.
+ * - Recalculates prod_purchase header totals.
+ * - Logs to prod_purchase_edit_log.
+ */
+public String cancelPurchaseItem(int detailId, int purchaseId, String reason, int uid) throws Exception {
+    Connection con = null;
+    PreparedStatement ps = null;
+    ResultSet rs = null;
+    try {
+        con = util.DBConnectionManager.getConnectionFromPool();
+        con.setAutoCommit(false);
+
+        // Fetch detail row
+        ps = con.prepareStatement(
+            "SELECT prods_id, quantity, free, rate, mrp FROM prod_purchase_details WHERE id = ? AND prid = ? AND IFNULL(is_cancelled,0) = 0");
+        ps.setInt(1, detailId);
+        ps.setInt(2, purchaseId);
+        rs = ps.executeQuery();
+        if (!rs.next()) {
+            throw new Exception("Item not found or already cancelled.");
+        }
+        int productId = rs.getInt(1);
+        double qty    = rs.getDouble(2);
+        double free   = rs.getDouble(3);
+        double rate   = rs.getDouble(4);
+        double mrp    = rs.getDouble(5);
+        rs.close(); ps.close();
+
+        BigDecimal totalQty = new BigDecimal(qty + free).setScale(3, java.math.RoundingMode.HALF_UP);
+
+        // Validate stock using prod_stock_totals (authoritative total across all batches)
+        ps = con.prepareStatement(
+            "SELECT IFNULL(stock, 0) FROM prod_stock_totals WHERE prods_id = ?");
+        ps.setInt(1, productId);
+        rs = ps.executeQuery();
+        BigDecimal currentStock = BigDecimal.ZERO;
+        if (rs.next()) currentStock = rs.getBigDecimal(1);
+        rs.close(); ps.close();
+
+        if (currentStock.compareTo(totalQty) < 0) {
+            throw new Exception("Cannot cancel: current stock (" + currentStock.toPlainString()
+                + ") is less than purchase qty (" + totalQty.toPlainString() + "). Reduce stock first.");
+        }
+
+        // Deduct stock from prod_batch (GREATEST prevents unsigned underflow across multiple batch rows)
+        ps = con.prepareStatement(
+            "UPDATE prod_batch SET stock = GREATEST(0, stock - ?) WHERE product_id = ?");
+        ps.setBigDecimal(1, totalQty);
+        ps.setInt(2, productId);
+        ps.executeUpdate(); ps.close();
+
+        // Deduct from prod_stock_totals
+        ps = con.prepareStatement(
+            "UPDATE prod_stock_totals SET stock = stock - ? WHERE prods_id = ?");
+        ps.setBigDecimal(1, totalQty);
+        ps.setInt(2, productId);
+        ps.executeUpdate(); ps.close();
+
+        // Get previous lifecycle row for stock_now
+        ps = con.prepareStatement(
+            "SELECT IFNULL(stock_now, 0) FROM prod_lifecycle WHERE product_id = ? ORDER BY id DESC LIMIT 1");
+        ps.setInt(1, productId);
+        rs = ps.executeQuery();
+        BigDecimal prevStockNow = BigDecimal.ZERO;
+        if (rs.next()) prevStockNow = rs.getBigDecimal(1);
+        rs.close(); ps.close();
+
+        // Insert lifecycle entry (stock out)
+        ps = con.prepareStatement(
+            "INSERT INTO prod_lifecycle(batch_id, product_id, stock_out, stock_now, is_zero_stock_bill, notes, uid, stock_type, DATE, TIME) " +
+            "VALUES(1, ?, ?, ?, 2, ?, ?, 2, NOW(), NOW())");
+        ps.setInt(1, productId);
+        ps.setBigDecimal(2, totalQty);
+        ps.setBigDecimal(3, prevStockNow.subtract(totalQty));
+        ps.setString(4, "Stock deducted — Purchase item cancelled (detail id: " + detailId + ")");
+        ps.setInt(5, uid);
+        ps.executeUpdate(); ps.close();
+
+        // Mark item as cancelled
+        ps = con.prepareStatement(
+            "UPDATE prod_purchase_details SET is_cancelled = 1 WHERE id = ?");
+        ps.setInt(1, detailId);
+        ps.executeUpdate(); ps.close();
+
+        // Recalculate prod_purchase header totals
+        ps = con.prepareStatement(
+            "UPDATE prod_purchase pp SET pp.total = (SELECT IFNULL(SUM(pd.totalamt),0) FROM prod_purchase_details pd WHERE pd.prid = pp.id AND IFNULL(pd.is_cancelled,0)=0), " +
+            "pp.net = (SELECT IFNULL(SUM(pd.netamt),0) FROM prod_purchase_details pd WHERE pd.prid = pp.id AND IFNULL(pd.is_cancelled,0)=0) " +
+            "WHERE pp.id = ?");
+        ps.setInt(1, purchaseId);
+        ps.executeUpdate(); ps.close();
+
+        // Log
+        ps = con.prepareStatement(
+            "INSERT INTO prod_purchase_edit_log(purchase_id, purchase_detail_id, product_id, edit_type, old_rate, new_rate, old_mrp, new_mrp, qty, reason, uid, date_time) " +
+            "VALUES(?,?,?,'cancel',?,0,?,0,?,?,?,NOW())");
+        ps.setInt(1, purchaseId);
+        ps.setInt(2, detailId);
+        ps.setInt(3, productId);
+        ps.setDouble(4, rate);
+        ps.setDouble(5, mrp);
+        ps.setDouble(6, qty);
+        ps.setString(7, reason != null ? reason : "");
+        ps.setInt(8, uid);
+        ps.executeUpdate(); ps.close();
+
+        con.commit();
+        return "Item cancelled successfully. Stock reduced by " + totalQty.toPlainString() + ".";
+    } catch (Exception e) {
+        if (con != null) { try { con.rollback(); } catch (Exception ex) { ; } }
+        throw e;
+    } finally {
+        if (rs  != null) try { rs.close();  } catch (Exception e) { ; }
+        if (ps  != null) try { ps.close();  } catch (Exception e) { ; }
+        if (con != null) try { con.close(); } catch (Exception e) { ; }
+    }
+}
+
+/**
+ * Save a purchase return.
+ * itemsArr format: "detailId<#>qty<#>rate<@>detailId<#>qty<#>rate<@>..."
+ * - Validates each qty <= original qty in purchase detail (minus already returned).
+ * - Reduces stock in prod_batch, prod_stock_totals.
+ * - Inserts prod_lifecycle (stock out).
+ * - Inserts prod_purchase_return header and prod_purchase_return_details.
+ */
+public String savePurchaseReturn(int purchaseId, String itemsArr, String notes, int uid) throws Exception {
+    Connection con = null;
+    PreparedStatement ps = null;
+    ResultSet rs = null;
+    try {
+        con = util.DBConnectionManager.getConnectionFromPool();
+        con.setAutoCommit(false);
+
+        // Get supplier from purchase header
+        ps = con.prepareStatement("SELECT deal_id FROM prod_purchase WHERE id = ?");
+        ps.setInt(1, purchaseId);
+        rs = ps.executeQuery();
+        int supplierId = rs.next() ? rs.getInt(1) : 0;
+        rs.close(); ps.close();
+
+        // Generate return number
+        ps = con.prepareStatement("SELECT COUNT(id)+1 FROM prod_purchase_return");
+        rs = ps.executeQuery();
+        String returnNo = rs.next() ? "RTN" + rs.getString(1) : "RTN1";
+        rs.close(); ps.close();
+
+        // Insert return header (total updated below)
+        ps = con.prepareStatement(
+            "INSERT INTO prod_purchase_return(return_no, purchase_id, supplier_id, total, notes, uid, date_time) VALUES(?,?,?,0,?,?,NOW())");
+        ps.setString(1, returnNo);
+        ps.setInt(2, purchaseId);
+        ps.setInt(3, supplierId);
+        ps.setString(4, notes != null ? notes : "");
+        ps.setInt(5, uid);
+        ps.executeUpdate(); ps.close();
+
+        ps = con.prepareStatement("SELECT MAX(id) FROM prod_purchase_return");
+        rs = ps.executeQuery();
+        int returnId = rs.next() ? rs.getInt(1) : 0;
+        rs.close(); ps.close();
+
+        double grandReturnTotal = 0;
+
+        String[] rows = itemsArr.split("<@>");
+        for (String row : rows) {
+            if (row.trim().isEmpty()) continue;
+            String[] fields = row.split("<#>");
+            int detailId = Integer.parseInt(fields[0]);
+            double returnQty = Double.parseDouble(fields[1]);
+            double rate = Double.parseDouble(fields[2]);
+
+            // Fetch original qty and product id
+            ps = con.prepareStatement(
+                "SELECT prods_id, quantity, free FROM prod_purchase_details WHERE id = ? AND prid = ? AND IFNULL(is_cancelled,0)=0");
+            ps.setInt(1, detailId);
+            ps.setInt(2, purchaseId);
+            rs = ps.executeQuery();
+            if (!rs.next()) {
+                throw new Exception("Purchase detail id " + detailId + " not found or cancelled.");
+            }
+            int productId  = rs.getInt(1);
+            double origQty = rs.getDouble(2) + rs.getDouble(3);
+            rs.close(); ps.close();
+
+            // Validate: total returned so far + this return <= origQty
+            ps = con.prepareStatement(
+                "SELECT IFNULL(SUM(prd.qty),0) FROM prod_purchase_return_details prd " +
+                "JOIN prod_purchase_return pr ON prd.return_id = pr.id " +
+                "WHERE prd.purchase_detail_id = ? AND pr.purchase_id = ?");
+            ps.setInt(1, detailId);
+            ps.setInt(2, purchaseId);
+            rs = ps.executeQuery();
+            double alreadyReturned = rs.next() ? rs.getDouble(1) : 0;
+            rs.close(); ps.close();
+
+            double available = origQty - alreadyReturned;
+            if (returnQty <= 0 || returnQty > available) {
+                throw new Exception("Return qty " + returnQty + " exceeds available qty " + available + " for product id " + productId + ".");
+            }
+
+            // Validate current stock using prod_stock_totals (authoritative total)
+            ps = con.prepareStatement("SELECT IFNULL(stock,0) FROM prod_stock_totals WHERE prods_id = ?");
+            ps.setInt(1, productId);
+            rs = ps.executeQuery();
+            BigDecimal currentStock = rs.next() ? rs.getBigDecimal(1) : BigDecimal.ZERO;
+            rs.close(); ps.close();
+
+            BigDecimal rQty = new BigDecimal(returnQty).setScale(3, java.math.RoundingMode.HALF_UP);
+            if (currentStock.compareTo(rQty) < 0) {
+                throw new Exception("Insufficient stock (" + currentStock.toPlainString() + ") for product id " + productId + ".");
+            }
+
+            // Deduct stock (GREATEST prevents unsigned underflow across multiple batch rows)
+            ps = con.prepareStatement("UPDATE prod_batch SET stock = GREATEST(0, stock - ?) WHERE product_id = ?");
+            ps.setBigDecimal(1, rQty);
+            ps.setInt(2, productId);
+            ps.executeUpdate(); ps.close();
+
+            ps = con.prepareStatement("UPDATE prod_stock_totals SET stock = stock - ? WHERE prods_id = ?");
+            ps.setBigDecimal(1, rQty);
+            ps.setInt(2, productId);
+            ps.executeUpdate(); ps.close();
+
+            // Lifecycle entry
+            ps = con.prepareStatement(
+                "SELECT IFNULL(stock_now,0) FROM prod_lifecycle WHERE product_id = ? ORDER BY id DESC LIMIT 1");
+            ps.setInt(1, productId);
+            rs = ps.executeQuery();
+            BigDecimal prevNow = rs.next() ? rs.getBigDecimal(1) : BigDecimal.ZERO;
+            rs.close(); ps.close();
+
+            ps = con.prepareStatement(
+                "INSERT INTO prod_lifecycle(batch_id, product_id, stock_out, stock_now, is_zero_stock_bill, notes, uid, stock_type, DATE, TIME) " +
+                "VALUES(1,?,?,?,2,?,?,2,NOW(),NOW())");
+            ps.setInt(1, productId);
+            ps.setBigDecimal(2, rQty);
+            ps.setBigDecimal(3, prevNow.subtract(rQty));
+            ps.setString(4, "Stock deducted — Purchase return (" + returnNo + ")");
+            ps.setInt(5, uid);
+            ps.executeUpdate(); ps.close();
+
+            double lineTotal = new java.math.BigDecimal(returnQty * rate).setScale(3, java.math.RoundingMode.HALF_UP).doubleValue();
+            grandReturnTotal += lineTotal;
+
+            // Insert return detail
+            ps = con.prepareStatement(
+                "INSERT INTO prod_purchase_return_details(return_id, purchase_detail_id, product_id, qty, rate, total, uid, date_time) " +
+                "VALUES(?,?,?,?,?,?,?,NOW())");
+            ps.setInt(1, returnId);
+            ps.setInt(2, detailId);
+            ps.setInt(3, productId);
+            ps.setDouble(4, returnQty);
+            ps.setDouble(5, rate);
+            ps.setDouble(6, lineTotal);
+            ps.setInt(7, uid);
+            ps.executeUpdate(); ps.close();
+        }
+
+        // Update return header total
+        ps = con.prepareStatement("UPDATE prod_purchase_return SET total = ? WHERE id = ?");
+        ps.setDouble(1, grandReturnTotal);
+        ps.setInt(2, returnId);
+        ps.executeUpdate(); ps.close();
+
+        con.commit();
+        return returnNo;
+    } catch (Exception e) {
+        if (con != null) { try { con.rollback(); } catch (Exception ex) { ; } }
+        throw e;
+    } finally {
+        if (rs  != null) try { rs.close();  } catch (Exception e) { ; }
+        if (ps  != null) try { ps.close();  } catch (Exception e) { ; }
+        if (con != null) try { con.close(); } catch (Exception e) { ; }
+    }
+}
+
+/**
+ * List purchase returns with date range and optional supplier filter.
+ * Returns: [id, return_no, purchase_id, prno, supplier_name, total, notes, date_time, entered_by]
+ */
+public Vector getPurchaseReturnList(String fromDate, String toDate, int supplierId) throws Exception {
+    Connection con = null;
+    PreparedStatement ps = null;
+    ResultSet rs = null;
+    Vector vec = new Vector();
+    try {
+        con = util.DBConnectionManager.getConnectionFromPool();
+        String sql = "SELECT pr.id, pr.return_no, pr.purchase_id, pp.prno, " +
+                     "IFNULL(d.name,'—') AS supplier_name, pr.total, pr.notes, pr.date_time, " +
+                     "IFNULL(u.user_name,'—') AS entered_by " +
+                     "FROM prod_purchase_return pr " +
+                     "JOIN prod_purchase pp ON pr.purchase_id = pp.id " +
+                     "LEFT JOIN prod_supplier d ON pr.supplier_id = d.id " +
+                     "LEFT JOIN users u ON pr.uid = u.id " +
+                     "WHERE DATE(pr.date_time) BETWEEN ? AND ?" +
+                     (supplierId > 0 ? " AND pr.supplier_id = ?" : "") +
+                     " ORDER BY pr.date_time DESC";
+        ps = con.prepareStatement(sql);
+        ps.setString(1, fromDate);
+        ps.setString(2, toDate);
+        if (supplierId > 0) ps.setInt(3, supplierId);
+        rs = ps.executeQuery();
+        while (rs.next()) {
+            Vector row = new Vector();
+            row.addElement(rs.getInt(1));     // 0 id
+            row.addElement(rs.getString(2));  // 1 return_no
+            row.addElement(rs.getInt(3));     // 2 purchase_id
+            row.addElement(rs.getString(4));  // 3 prno
+            row.addElement(rs.getString(5));  // 4 supplier_name
+            row.addElement(rs.getDouble(6));  // 5 total
+            row.addElement(rs.getString(7));  // 6 notes
+            row.addElement(rs.getString(8));  // 7 date_time
+            row.addElement(rs.getString(9));  // 8 entered_by
+            vec.add(row);
+        }
+    } finally {
+        if (rs  != null) try { rs.close();  } catch (Exception e) { ; }
+        if (ps  != null) try { ps.close();  } catch (Exception e) { ; }
+        if (con != null) try { con.close(); } catch (Exception e) { ; }
+    }
+    return vec;
+}
+
+/**
+ * Get items for a specific purchase return.
+ * Returns: [id, product_name, qty, rate, total]
+ */
+public Vector getPurchaseReturnDetails(int returnId) throws Exception {
+    Connection con = null;
+    PreparedStatement ps = null;
+    ResultSet rs = null;
+    Vector vec = new Vector();
+    try {
+        con = util.DBConnectionManager.getConnectionFromPool();
+        String sql = "SELECT prd.id, p.name, prd.qty, prd.rate, prd.total " +
+                     "FROM prod_purchase_return_details prd " +
+                     "JOIN prod_product p ON prd.product_id = p.id " +
+                     "WHERE prd.return_id = ? ORDER BY prd.id";
+        ps = con.prepareStatement(sql);
+        ps.setInt(1, returnId);
+        rs = ps.executeQuery();
+        while (rs.next()) {
+            Vector row = new Vector();
+            row.addElement(rs.getInt(1));     // 0 id
+            row.addElement(rs.getString(2));  // 1 product_name
+            row.addElement(rs.getDouble(3));  // 2 qty
+            row.addElement(rs.getDouble(4));  // 3 rate
+            row.addElement(rs.getDouble(5));  // 4 total
+            vec.add(row);
+        }
+    } finally {
+        if (rs  != null) try { rs.close();  } catch (Exception e) { ; }
+        if (ps  != null) try { ps.close();  } catch (Exception e) { ; }
+        if (con != null) try { con.close(); } catch (Exception e) { ; }
+    }
+    return vec;
+}
+
+public int getPurchaseIdByPrno(String prno) throws Exception {
+    Connection con = null;
+    PreparedStatement ps = null;
+    ResultSet rs = null;
+    int purchaseId = 0;
+    try {
+        con = util.DBConnectionManager.getConnectionFromPool();
+        ps = con.prepareStatement("SELECT id FROM prod_purchase WHERE prno = ? AND is_cancelled = 0 LIMIT 1");
+        ps.setString(1, prno.trim());
+        rs = ps.executeQuery();
+        if (rs.next()) purchaseId = rs.getInt(1);
+    } finally {
+        if (rs  != null) try { rs.close();  } catch (Exception e) { ; }
+        if (ps  != null) try { ps.close();  } catch (Exception e) { ; }
+        if (con != null) try { con.close(); } catch (Exception e) { ; }
+    }
+    return purchaseId;
+}
+
+/** Returns already-returned qty per purchase_detail_id for a given purchase.
+ * Each element: [detailId(Integer), returnedQty(Double)] */
+public Vector getAlreadyReturnedQtyForPurchase(int purchaseId) throws Exception {
+    Connection con = null;
+    PreparedStatement ps = null;
+    ResultSet rs = null;
+    Vector vec = new Vector();
+    try {
+        con = util.DBConnectionManager.getConnectionFromPool();
+        ps = con.prepareStatement(
+            "SELECT prd.purchase_detail_id, IFNULL(SUM(prd.qty),0) " +
+            "FROM prod_purchase_return_details prd " +
+            "JOIN prod_purchase_return pr ON prd.return_id = pr.id " +
+            "WHERE pr.purchase_id = ? " +
+            "GROUP BY prd.purchase_detail_id");
+        ps.setInt(1, purchaseId);
+        rs = ps.executeQuery();
+        while (rs.next()) {
+            Vector row = new Vector();
+            row.addElement(rs.getInt(1));     // 0 detailId
+            row.addElement(rs.getDouble(2));  // 1 returnedQty
+            vec.add(row);
+        }
+    } finally {
+        if (rs  != null) try { rs.close();  } catch (Exception e) { ; }
+        if (ps  != null) try { ps.close();  } catch (Exception e) { ; }
+        if (con != null) try { con.close(); } catch (Exception e) { ; }
+    }
+    return vec;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PRODUCT ANALYSIS REPORT METHODS
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Sales transactions for a product within a date range (normal sales only).
+ * Returns: [0:bill_display, 1:date, 2:cusName, 3:qty, 4:price, 5:disc, 6:gst, 7:total, 8:cost, 9:user]
+ */
+public Vector getProductSalesReport(int prodId, String fromDate, String toDate) throws Exception {
+    Connection con = null;
+    PreparedStatement ps = null;
+    ResultSet rs = null;
+    Vector vec = new Vector();
+    try {
+        con = util.DBConnectionManager.getConnectionFromPool();
+        ps = con.prepareStatement(
+            "SELECT b.bill_display, b.date, IFNULL(b.cusName,'Walk-in'), " +
+            "       bd.qty, bd.price, bd.disc, bd.gst, bd.total, bd.cost, " +
+            "       IFNULL(u.user_name,'—') " +
+            "FROM prod_bill_details bd " +
+            "JOIN prod_bill b ON bd.bill_id = b.id " +
+            "LEFT JOIN users u ON b.uid = u.id " +
+            "WHERE bd.prod_id = ? AND b.date BETWEEN ? AND ? " +
+            "  AND b.is_cancelled = 0 AND bd.is_cancelled = 0 AND bd.is_exchanged = 0 " +
+            "ORDER BY b.date DESC, b.id DESC");
+        ps.setInt(1, prodId);
+        ps.setString(2, fromDate);
+        ps.setString(3, toDate);
+        rs = ps.executeQuery();
+        while (rs.next()) {
+            Vector row = new Vector();
+            row.addElement(rs.getString(1));   // 0 bill_display
+            row.addElement(rs.getString(2));   // 1 date
+            row.addElement(rs.getString(3));   // 2 cusName
+            row.addElement(rs.getDouble(4));   // 3 qty
+            row.addElement(rs.getDouble(5));   // 4 price
+            row.addElement(rs.getDouble(6));   // 5 disc
+            row.addElement(rs.getDouble(7));   // 6 gst
+            row.addElement(rs.getDouble(8));   // 7 total
+            row.addElement(rs.getDouble(9));   // 8 cost
+            row.addElement(rs.getString(10));  // 9 user
+            vec.add(row);
+        }
+    } finally {
+        if (rs  != null) try { rs.close();  } catch (Exception e) { ; }
+        if (ps  != null) try { ps.close();  } catch (Exception e) { ; }
+        if (con != null) try { con.close(); } catch (Exception e) { ; }
+    }
+    return vec;
+}
+
+/**
+ * Sales returns (is_exchanged=2) for a product within a date range.
+ * Returns: [0:bill_display, 1:date, 2:cusName, 3:qty, 4:price, 5:total, 6:user]
+ */
+public Vector getProductSalesReturnReport(int prodId, String fromDate, String toDate) throws Exception {
+    Connection con = null;
+    PreparedStatement ps = null;
+    ResultSet rs = null;
+    Vector vec = new Vector();
+    try {
+        con = util.DBConnectionManager.getConnectionFromPool();
+        ps = con.prepareStatement(
+            "SELECT b.bill_display, b.date, IFNULL(b.cusName,'Walk-in'), " +
+            "       bd.qty, bd.price, bd.total, IFNULL(u.user_name,'—') " +
+            "FROM prod_bill_details bd " +
+            "JOIN prod_bill b ON bd.bill_id = b.id " +
+            "LEFT JOIN users u ON b.uid = u.id " +
+            "WHERE bd.prod_id = ? AND b.date BETWEEN ? AND ? " +
+            "  AND b.is_cancelled = 0 AND bd.is_exchanged = 2 " +
+            "ORDER BY b.date DESC, b.id DESC");
+        ps.setInt(1, prodId);
+        ps.setString(2, fromDate);
+        ps.setString(3, toDate);
+        rs = ps.executeQuery();
+        while (rs.next()) {
+            Vector row = new Vector();
+            row.addElement(rs.getString(1));   // 0 bill_display
+            row.addElement(rs.getString(2));   // 1 date
+            row.addElement(rs.getString(3));   // 2 cusName
+            row.addElement(rs.getDouble(4));   // 3 qty
+            row.addElement(rs.getDouble(5));   // 4 price
+            row.addElement(rs.getDouble(6));   // 5 total
+            row.addElement(rs.getString(7));   // 6 user
+            vec.add(row);
+        }
+    } finally {
+        if (rs  != null) try { rs.close();  } catch (Exception e) { ; }
+        if (ps  != null) try { ps.close();  } catch (Exception e) { ; }
+        if (con != null) try { con.close(); } catch (Exception e) { ; }
+    }
+    return vec;
+}
+
+/**
+ * Purchase transactions for a product within a date range.
+ * Returns: [0:prno, 1:invno, 2:ent_date, 3:supplier, 4:qty, 5:free, 6:rate, 7:mrp, 8:disc_per, 9:tax, 10:totalamt, 11:netamt, 12:user]
+ */
+public Vector getProductPurchaseReport(int prodId, String fromDate, String toDate) throws Exception {
+    Connection con = null;
+    PreparedStatement ps = null;
+    ResultSet rs = null;
+    Vector vec = new Vector();
+    try {
+        con = util.DBConnectionManager.getConnectionFromPool();
+        ps = con.prepareStatement(
+            "SELECT p.prno, p.invno, p.ent_date, IFNULL(s.name,'—'), " +
+            "       pd.quantity, pd.free, pd.rate, pd.mrp, pd.disc_per, pd.tax, pd.totalamt, pd.netamt, " +
+            "       IFNULL(u.user_name,'—') " +
+            "FROM prod_purchase_details pd " +
+            "JOIN prod_purchase p ON pd.prid = p.id " +
+            "LEFT JOIN prod_supplier s ON p.deal_id = s.id " +
+            "LEFT JOIN users u ON p.ent_uid = u.id " +
+            "WHERE pd.prods_id = ? AND p.ent_date BETWEEN ? AND ? " +
+            "  AND p.is_cancelled = 0 AND pd.is_cancelled = 0 " +
+            "ORDER BY p.ent_date DESC, p.id DESC");
+        ps.setInt(1, prodId);
+        ps.setString(2, fromDate);
+        ps.setString(3, toDate);
+        rs = ps.executeQuery();
+        while (rs.next()) {
+            Vector row = new Vector();
+            row.addElement(rs.getString(1));   // 0 prno
+            row.addElement(rs.getString(2));   // 1 invno
+            row.addElement(rs.getString(3));   // 2 ent_date
+            row.addElement(rs.getString(4));   // 3 supplier
+            row.addElement(rs.getDouble(5));   // 4 qty
+            row.addElement(rs.getDouble(6));   // 5 free
+            row.addElement(rs.getDouble(7));   // 6 rate
+            row.addElement(rs.getDouble(8));   // 7 mrp
+            row.addElement(rs.getDouble(9));   // 8 disc_per
+            row.addElement(rs.getDouble(10));  // 9 tax
+            row.addElement(rs.getDouble(11));  // 10 totalamt
+            row.addElement(rs.getDouble(12));  // 11 netamt
+            row.addElement(rs.getString(13));  // 12 user
+            vec.add(row);
+        }
+    } finally {
+        if (rs  != null) try { rs.close();  } catch (Exception e) { ; }
+        if (ps  != null) try { ps.close();  } catch (Exception e) { ; }
+        if (con != null) try { con.close(); } catch (Exception e) { ; }
+    }
+    return vec;
+}
+
+/**
+ * Purchase return transactions for a product within a date range.
+ * Returns: [0:return_no, 1:date, 2:supplier, 3:qty, 4:rate, 5:total, 6:notes, 7:user]
+ */
+public Vector getProductPurchaseReturnReport(int prodId, String fromDate, String toDate) throws Exception {
+    Connection con = null;
+    PreparedStatement ps = null;
+    ResultSet rs = null;
+    Vector vec = new Vector();
+    try {
+        con = util.DBConnectionManager.getConnectionFromPool();
+        ps = con.prepareStatement(
+            "SELECT pr.return_no, DATE(pr.date_time), IFNULL(s.name,'—'), " +
+            "       prd.qty, prd.rate, prd.total, IFNULL(pr.notes,''), IFNULL(u.user_name,'—') " +
+            "FROM prod_purchase_return_details prd " +
+            "JOIN prod_purchase_return pr ON prd.return_id = pr.id " +
+            "LEFT JOIN prod_supplier s ON pr.supplier_id = s.id " +
+            "LEFT JOIN users u ON pr.uid = u.id " +
+            "WHERE prd.product_id = ? AND DATE(pr.date_time) BETWEEN ? AND ? " +
+            "ORDER BY pr.date_time DESC");
+        ps.setInt(1, prodId);
+        ps.setString(2, fromDate);
+        ps.setString(3, toDate);
+        rs = ps.executeQuery();
+        while (rs.next()) {
+            Vector row = new Vector();
+            row.addElement(rs.getString(1));   // 0 return_no
+            row.addElement(rs.getString(2));   // 1 date
+            row.addElement(rs.getString(3));   // 2 supplier
+            row.addElement(rs.getDouble(4));   // 3 qty
+            row.addElement(rs.getDouble(5));   // 4 rate
+            row.addElement(rs.getDouble(6));   // 5 total
+            row.addElement(rs.getString(7));   // 6 notes
+            row.addElement(rs.getString(8));   // 7 user
+            vec.add(row);
+        }
+    } finally {
+        if (rs  != null) try { rs.close();  } catch (Exception e) { ; }
+        if (ps  != null) try { ps.close();  } catch (Exception e) { ; }
+        if (con != null) try { con.close(); } catch (Exception e) { ; }
+    }
+    return vec;
+}
+
+/**
+ * Exchange transactions involving a product (as old or new) within a date range.
+ * Returns: [0:bill_display, 1:date, 2:cusName, 3:old_prod, 4:new_prod, 5:direction(Out/In), 6:user]
+ */
+public Vector getProductExchangeReport(int prodId, String fromDate, String toDate) throws Exception {
+    Connection con = null;
+    PreparedStatement ps = null;
+    ResultSet rs = null;
+    Vector vec = new Vector();
+    try {
+        con = util.DBConnectionManager.getConnectionFromPool();
+        ps = con.prepareStatement(
+            "SELECT b.bill_display, DATE(e.date_time), IFNULL(b.cusName,'Walk-in'), " +
+            "       old_p.name, new_p.name, " +
+            "       CASE WHEN e.old_prod_id = ? THEN 'Out' ELSE 'In' END, " +
+            "       IFNULL(u.user_name,'—') " +
+            "FROM pro_bill_exchange e " +
+            "JOIN prod_bill b ON e.bill_id = b.id " +
+            "JOIN prod_product old_p ON e.old_prod_id = old_p.id " +
+            "JOIN prod_product new_p ON e.new_prod_id = new_p.id " +
+            "LEFT JOIN users u ON b.uid = u.id " +
+            "WHERE (e.old_prod_id = ? OR e.new_prod_id = ?) " +
+            "  AND DATE(e.date_time) BETWEEN ? AND ? " +
+            "ORDER BY e.date_time DESC");
+        ps.setInt(1, prodId);
+        ps.setInt(2, prodId);
+        ps.setInt(3, prodId);
+        ps.setString(4, fromDate);
+        ps.setString(5, toDate);
+        rs = ps.executeQuery();
+        while (rs.next()) {
+            Vector row = new Vector();
+            row.addElement(rs.getString(1));   // 0 bill_display
+            row.addElement(rs.getString(2));   // 1 date
+            row.addElement(rs.getString(3));   // 2 cusName
+            row.addElement(rs.getString(4));   // 3 old_prod
+            row.addElement(rs.getString(5));   // 4 new_prod
+            row.addElement(rs.getString(6));   // 5 direction
+            row.addElement(rs.getString(7));   // 6 user
+            vec.add(row);
+        }
+    } finally {
+        if (rs  != null) try { rs.close();  } catch (Exception e) { ; }
+        if (ps  != null) try { ps.close();  } catch (Exception e) { ; }
+        if (con != null) try { con.close(); } catch (Exception e) { ; }
+    }
+    return vec;
+}
+
+/**
+ * Cancelled transactions involving a product within a date range.
+ * Includes bill-level and item-level cancellations.
+ * Returns: [0:bill_display, 1:date, 2:cusName, 3:qty, 4:price, 5:total, 6:cancel_type(Bill/Item), 7:user]
+ */
+public Vector getProductCancelReport(int prodId, String fromDate, String toDate) throws Exception {
+    Connection con = null;
+    PreparedStatement ps = null;
+    ResultSet rs = null;
+    Vector vec = new Vector();
+    try {
+        con = util.DBConnectionManager.getConnectionFromPool();
+        ps = con.prepareStatement(
+            "SELECT b.bill_display, b.date, IFNULL(b.cusName,'Walk-in'), " +
+            "       bd.qty, bd.price, bd.total, " +
+            "       CASE WHEN b.is_cancelled = 1 THEN 'Bill' ELSE 'Item' END, " +
+            "       IFNULL(u.user_name,'—') " +
+            "FROM prod_bill_details bd " +
+            "JOIN prod_bill b ON bd.bill_id = b.id " +
+            "LEFT JOIN users u ON b.uid = u.id " +
+            "WHERE bd.prod_id = ? AND b.date BETWEEN ? AND ? " +
+            "  AND (b.is_cancelled = 1 OR bd.is_cancelled = 1) " +
+            "ORDER BY b.date DESC, b.id DESC");
+        ps.setInt(1, prodId);
+        ps.setString(2, fromDate);
+        ps.setString(3, toDate);
+        rs = ps.executeQuery();
+        while (rs.next()) {
+            Vector row = new Vector();
+            row.addElement(rs.getString(1));   // 0 bill_display
+            row.addElement(rs.getString(2));   // 1 date
+            row.addElement(rs.getString(3));   // 2 cusName
+            row.addElement(rs.getDouble(4));   // 3 qty
+            row.addElement(rs.getDouble(5));   // 4 price
+            row.addElement(rs.getDouble(6));   // 5 total
+            row.addElement(rs.getString(7));   // 6 cancel_type
+            row.addElement(rs.getString(8));   // 7 user
+            vec.add(row);
+        }
+    } finally {
+        if (rs  != null) try { rs.close();  } catch (Exception e) { ; }
+        if (ps  != null) try { ps.close();  } catch (Exception e) { ; }
+        if (con != null) try { con.close(); } catch (Exception e) { ; }
+    }
+    return vec;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CUSTOMER ANALYSIS REPORT METHODS
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Sales for a customer within a date range (normal, non-cancelled bills).
+ * Returns: [0:bill_display, 1:date, 2:total, 3:payable, 4:paid, 5:balance, 6:paymentMode, 7:user]
+ */
+public Vector getCustomerSalesReport(int customerId, String fromDate, String toDate) throws Exception {
+    Connection con = null;
+    PreparedStatement ps = null;
+    ResultSet rs = null;
+    Vector vec = new Vector();
+    try {
+        con = util.DBConnectionManager.getConnectionFromPool();
+        ps = con.prepareStatement(
+            "SELECT b.bill_display, b.date, b.total, b.payable, b.paid, b.balance, " +
+            "       CASE b.paymentMode WHEN 1 THEN 'Cash' WHEN 2 THEN 'Credit' WHEN 3 THEN 'Mixed' ELSE 'Other' END, " +
+            "       IFNULL(u.user_name,'—') " +
+            "FROM prod_bill b " +
+            "LEFT JOIN users u ON b.uid = u.id " +
+            "WHERE b.customerId = ? AND b.date BETWEEN ? AND ? AND b.is_cancelled = 0 " +
+            "ORDER BY b.date DESC, b.id DESC");
+        ps.setInt(1, customerId);
+        ps.setString(2, fromDate);
+        ps.setString(3, toDate);
+        rs = ps.executeQuery();
+        while (rs.next()) {
+            Vector row = new Vector();
+            row.addElement(rs.getString(1));   // 0 bill_display
+            row.addElement(rs.getString(2));   // 1 date
+            row.addElement(rs.getDouble(3));   // 2 total
+            row.addElement(rs.getDouble(4));   // 3 payable
+            row.addElement(rs.getDouble(5));   // 4 paid
+            row.addElement(rs.getDouble(6));   // 5 balance
+            row.addElement(rs.getString(7));   // 6 paymentMode
+            row.addElement(rs.getString(8));   // 7 user
+            vec.add(row);
+        }
+    } finally {
+        if (rs  != null) try { rs.close();  } catch (Exception e) { ; }
+        if (ps  != null) try { ps.close();  } catch (Exception e) { ; }
+        if (con != null) try { con.close(); } catch (Exception e) { ; }
+    }
+    return vec;
+}
+
+/**
+ * Sales returns (is_exchanged=2) for a customer within a date range.
+ * Returns: [0:bill_display, 1:date, 2:prod_name, 3:qty, 4:price, 5:total, 6:user]
+ */
+public Vector getCustomerSalesReturnReport(int customerId, String fromDate, String toDate) throws Exception {
+    Connection con = null;
+    PreparedStatement ps = null;
+    ResultSet rs = null;
+    Vector vec = new Vector();
+    try {
+        con = util.DBConnectionManager.getConnectionFromPool();
+        ps = con.prepareStatement(
+            "SELECT b.bill_display, b.date, p.name, bd.qty, bd.price, bd.total, IFNULL(u.user_name,'—') " +
+            "FROM prod_bill_details bd " +
+            "JOIN prod_bill b ON bd.bill_id = b.id " +
+            "JOIN prod_product p ON bd.prod_id = p.id " +
+            "LEFT JOIN users u ON b.uid = u.id " +
+            "WHERE b.customerId = ? AND b.date BETWEEN ? AND ? " +
+            "  AND b.is_cancelled = 0 AND bd.is_exchanged = 2 " +
+            "ORDER BY b.date DESC, b.id DESC");
+        ps.setInt(1, customerId);
+        ps.setString(2, fromDate);
+        ps.setString(3, toDate);
+        rs = ps.executeQuery();
+        while (rs.next()) {
+            Vector row = new Vector();
+            row.addElement(rs.getString(1));   // 0 bill_display
+            row.addElement(rs.getString(2));   // 1 date
+            row.addElement(rs.getString(3));   // 2 prod_name
+            row.addElement(rs.getDouble(4));   // 3 qty
+            row.addElement(rs.getDouble(5));   // 4 price
+            row.addElement(rs.getDouble(6));   // 5 total
+            row.addElement(rs.getString(7));   // 6 user
+            vec.add(row);
+        }
+    } finally {
+        if (rs  != null) try { rs.close();  } catch (Exception e) { ; }
+        if (ps  != null) try { ps.close();  } catch (Exception e) { ; }
+        if (con != null) try { con.close(); } catch (Exception e) { ; }
+    }
+    return vec;
+}
+
+/**
+ * Exchanges for a customer within a date range.
+ * Returns: [0:bill_display, 1:date, 2:old_prod, 3:new_prod, 4:user]
+ */
+public Vector getCustomerExchangeReport(int customerId, String fromDate, String toDate) throws Exception {
+    Connection con = null;
+    PreparedStatement ps = null;
+    ResultSet rs = null;
+    Vector vec = new Vector();
+    try {
+        con = util.DBConnectionManager.getConnectionFromPool();
+        ps = con.prepareStatement(
+            "SELECT b.bill_display, DATE(e.date_time), op.name, np.name, IFNULL(u.user_name,'—') " +
+            "FROM pro_bill_exchange e " +
+            "JOIN prod_bill b ON e.bill_id = b.id " +
+            "JOIN prod_product op ON e.old_prod_id = op.id " +
+            "JOIN prod_product np ON e.new_prod_id = np.id " +
+            "LEFT JOIN users u ON b.uid = u.id " +
+            "WHERE e.customer_id = ? AND DATE(e.date_time) BETWEEN ? AND ? " +
+            "ORDER BY e.date_time DESC");
+        ps.setInt(1, customerId);
+        ps.setString(2, fromDate);
+        ps.setString(3, toDate);
+        rs = ps.executeQuery();
+        while (rs.next()) {
+            Vector row = new Vector();
+            row.addElement(rs.getString(1));   // 0 bill_display
+            row.addElement(rs.getString(2));   // 1 date
+            row.addElement(rs.getString(3));   // 2 old_prod
+            row.addElement(rs.getString(4));   // 3 new_prod
+            row.addElement(rs.getString(5));   // 4 user
+            vec.add(row);
+        }
+    } finally {
+        if (rs  != null) try { rs.close();  } catch (Exception e) { ; }
+        if (ps  != null) try { ps.close();  } catch (Exception e) { ; }
+        if (con != null) try { con.close(); } catch (Exception e) { ; }
+    }
+    return vec;
+}
+
+/**
+ * Exchange point ledger for a customer within a date range.
+ * Returns: [0:bill_display, 1:date, 2:old_point, 3:exchange_point(+/-), 4:total_point, 5:notes, 6:user]
+ */
+public Vector getCustomerExchangePoints(int customerId, String fromDate, String toDate) throws Exception {
+    Connection con = null;
+    PreparedStatement ps = null;
+    ResultSet rs = null;
+    Vector vec = new Vector();
+    try {
+        con = util.DBConnectionManager.getConnectionFromPool();
+        ps = con.prepareStatement(
+            "SELECT b.bill_display, DATE(ep.date_time), ep.old_point, ep.exchange_point, ep.total_point, " +
+            "       IFNULL(ep.notes,''), IFNULL(u.user_name,'—') " +
+            "FROM customers_exchange_point ep " +
+            "JOIN prod_bill b ON ep.bill_id = b.id " +
+            "LEFT JOIN users u ON ep.uid = u.id " +
+            "WHERE ep.customer_id = ? AND DATE(ep.date_time) BETWEEN ? AND ? " +
+            "ORDER BY ep.date_time ASC");
+        ps.setInt(1, customerId);
+        ps.setString(2, fromDate);
+        ps.setString(3, toDate);
+        rs = ps.executeQuery();
+        while (rs.next()) {
+            Vector row = new Vector();
+            row.addElement(rs.getString(1));   // 0 bill_display
+            row.addElement(rs.getString(2));   // 1 date
+            row.addElement(rs.getDouble(3));   // 2 old_point
+            row.addElement(rs.getDouble(4));   // 3 exchange_point (+/-)
+            row.addElement(rs.getDouble(5));   // 4 total_point
+            row.addElement(rs.getString(6));   // 5 notes
+            row.addElement(rs.getString(7));   // 6 user
+            vec.add(row);
+        }
+    } finally {
+        if (rs  != null) try { rs.close();  } catch (Exception e) { ; }
+        if (ps  != null) try { ps.close();  } catch (Exception e) { ; }
+        if (con != null) try { con.close(); } catch (Exception e) { ; }
+    }
+    return vec;
+}
+
 }

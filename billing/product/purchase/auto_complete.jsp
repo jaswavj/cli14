@@ -10,7 +10,8 @@
 		{
 		Vector vec1	= (Vector)vec.elementAt(i); 
 		String name	= vec1.elementAt(0).toString();
+		String code	= vec1.elementAt(1).toString();
 		
-		out.print(name+"\n"); 
+		out.print(name+"<#>"+code+"\n"); 
 		}  
 	%>

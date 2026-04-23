@@ -42,13 +42,13 @@
 			<active>false</active>
 		</docitem>
 		<docitem>
-			<path>util\DBConnectionManager.java</path>
+			<path>product\productBean.java</path>
 			<source>true</source>
 			<index>1</index>
 			<active>true</active>
 		</docitem>
 		<docitem>
-			<path>product\productBean.java</path>
+			<path>user\userBean.java</path>
 			<source>true</source>
 			<index>2</index>
 			<active>false</active>

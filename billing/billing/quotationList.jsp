@@ -11,14 +11,14 @@ Vector quotList = bill.getQuotationList();
         <div class="modal-content">
             <div class="modal-header" style="background: linear-gradient(135deg, #a9a8aa 0%, #7f7f7f 100%); color: white;">
                 <h5 class="modal-title" id="quotationListModalLabel">
-                    <i class="fas fa-file-invoice"></i> Pending Quotations
+                    <i class="fas fa-clock"></i> Hold Bills
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body" style="padding: 0;">
                 <% if (quotList == null || quotList.isEmpty()) { %>
                     <div class="alert alert-info m-3">
-                        <i class="fas fa-info-circle"></i> No pending quotations found.
+                        <i class="fas fa-info-circle"></i> No hold bills found.
                     </div>
                 <% } else { %>
                     <div class="table-responsive">

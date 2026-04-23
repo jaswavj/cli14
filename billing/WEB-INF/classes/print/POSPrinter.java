@@ -250,6 +250,27 @@ public class POSPrinter {
             companyGSTIN = companyDetails.get(3) != null ? companyDetails.get(3).toString() : "";
         }
         
+        Paragraph pVerse1 = new Paragraph("I Can Do All Things Through Jesus Christ Who", fontSmall);
+        pVerse1.setAlignment(Element.ALIGN_CENTER);
+        document.add(pVerse1);
+        Paragraph pVerse2 = new Paragraph("Strengthens Me.", fontSmall);
+        pVerse2.setAlignment(Element.ALIGN_CENTER);
+        document.add(pVerse2);
+
+        // Logo after verse
+        if (applicationBasePath != null) {
+            File logoFile = new File(applicationBasePath + File.separator + "logo.png");
+            if (logoFile.exists()) {
+                Image logo = Image.getInstance(logoFile.getAbsolutePath());
+                logo.setAlignment(Element.ALIGN_CENTER);
+                float maxWidth = pageWidth * 0.5f;
+                if (logo.getWidth() > maxWidth) {
+                    logo.scaleToFit(maxWidth, 1000);
+                }
+                document.add(logo);
+            }
+        }
+
         Paragraph pCompany = new Paragraph(companyName, fontTitle);
         pCompany.setAlignment(Element.ALIGN_CENTER);
         document.add(pCompany);
@@ -427,9 +448,18 @@ public class POSPrinter {
         pAmount.setAlignment(Element.ALIGN_CENTER);
         document.add(pAmount);
         
-        Paragraph pThanks = new Paragraph("\nThank You! Visit Again", fontSmall);
+        Paragraph pThanks = new Paragraph("\nTHANK YOU, VISIT AGAIN", fontSmall);
         pThanks.setAlignment(Element.ALIGN_CENTER);
         document.add(pThanks);
+        Paragraph pMsg1 = new Paragraph("No Refund, No Exchange for Offer Items", fontSmall);
+        pMsg1.setAlignment(Element.ALIGN_CENTER);
+        document.add(pMsg1);
+        Paragraph pMsg2 = new Paragraph("Exchange within 3 days with Compulsory Bill", fontSmall);
+        pMsg2.setAlignment(Element.ALIGN_CENTER);
+        document.add(pMsg2);
+        Paragraph pMsg3 = new Paragraph("We Cannot Spell SUCCESS without U", fontSmall);
+        pMsg3.setAlignment(Element.ALIGN_CENTER);
+        document.add(pMsg3);
         
         document.close();
         return filePath;
@@ -466,6 +496,64 @@ public class POSPrinter {
         table.addCell(cellLabel);
         table.addCell(cellValue);
         doc.add(table);
+    }
+
+    /**
+     * Print logo image via ESC/POS raster command (GS v 0).
+     * Silently skipped if logo file is missing or unreadable.
+     */
+    private static void printLogoEscPos(ByteArrayOutputStream baos) {
+        try {
+            if (applicationBasePath == null) return;
+            File logoFile = new File(applicationBasePath + File.separator + "logo.png");
+            if (!logoFile.exists()) return;
+
+            java.awt.image.BufferedImage original = javax.imageio.ImageIO.read(logoFile);
+            if (original == null) return;
+
+            // Medium size: 200px wide for 80mm, 150px for 58mm
+            int targetWidth = (RECEIPT_WIDTH == RECEIPT_WIDTH_58MM) ? 150 : 200;
+            int targetHeight = (int)((double)original.getHeight() / original.getWidth() * targetWidth);
+            if (targetHeight < 1) return;
+
+            java.awt.image.BufferedImage scaled = new java.awt.image.BufferedImage(
+                    targetWidth, targetHeight, java.awt.image.BufferedImage.TYPE_INT_RGB);
+            java.awt.Graphics2D g2d = scaled.createGraphics();
+            g2d.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION,
+                    java.awt.RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+            g2d.drawImage(original, 0, 0, targetWidth, targetHeight, null);
+            g2d.dispose();
+
+            // GS v 0 – Print raster bit image
+            int widthBytes = (targetWidth + 7) / 8;
+            baos.write(new byte[]{0x1D, 0x76, 0x30, 0x00});
+            baos.write(widthBytes & 0xFF);
+            baos.write((widthBytes >> 8) & 0xFF);
+            baos.write(targetHeight & 0xFF);
+            baos.write((targetHeight >> 8) & 0xFF);
+
+            for (int y = 0; y < targetHeight; y++) {
+                for (int xByte = 0; xByte < widthBytes; xByte++) {
+                    int b = 0;
+                    for (int bit = 0; bit < 8; bit++) {
+                        int x = xByte * 8 + bit;
+                        if (x < targetWidth) {
+                            int rgb = scaled.getRGB(x, y);
+                            int r = (rgb >> 16) & 0xFF;
+                            int g = (rgb >> 8) & 0xFF;
+                            int bl = rgb & 0xFF;
+                            int gray = (r + g + bl) / 3;
+                            if (gray < 128) {
+                                b |= (0x80 >> bit);
+                            }
+                        }
+                    }
+                    baos.write(b);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -514,6 +602,9 @@ public class POSPrinter {
             companyGSTIN = companyDetails.get(3) != null ? companyDetails.get(3).toString() : "";
         }
         
+        sb.append(centerText("I Can Do All Things Through Jesus Christ Who")).append("\n");
+        sb.append(centerText("Strengthens Me.")).append("\n");
+
         // Center align company name
         sb.append(centerText(companyName)).append("\n");
         
@@ -672,7 +763,11 @@ public class POSPrinter {
         
         // ===== FOOTER =====
         sb.append(centerText(numPaid.toUpperCase())).append("\n");
-        sb.append(centerText("Thank You! Visit Again")).append("\n");
+        sb.append(divider());
+        sb.append(centerText("THANK YOU, VISIT AGAIN")).append("\n");
+        sb.append(centerText("No Refund, No Exchange for Offer Items")).append("\n");
+        sb.append(centerText("Exchange within 3 days with Compulsory Bill")).append("\n");
+        sb.append(centerText("We Cannot Spell SUCCESS without U")).append("\n");
         sb.append("\n\n");
         
         return sb.toString();
@@ -702,6 +797,12 @@ public class POSPrinter {
         }
         
         writeBytes(baos, ALIGN_CENTER);
+        writeString(baos, "I Can Do All Things Through Jesus Christ Who\n");
+        writeString(baos, "Strengthens Me.\n");
+
+        // Print logo after verse
+        printLogoEscPos(baos);
+
         writeBytes(baos, BOLD_ON);
         writeString(baos, companyName + "\n");
         writeBytes(baos, BOLD_OFF);
@@ -875,7 +976,13 @@ public class POSPrinter {
         // ===== FOOTER =====
         writeBytes(baos, ALIGN_CENTER);
         writeString(baos, numPaid.toUpperCase() + "\n");
-        writeString(baos, "Thank You! Visit Again\n");
+        writeDivider(baos);
+        writeBytes(baos, BOLD_ON);
+        writeString(baos, "THANK YOU, VISIT AGAIN\n");
+        writeBytes(baos, BOLD_OFF);
+        writeString(baos, "No Refund, No Exchange for Offer Items\n");
+        writeString(baos, "Exchange within 3 days with Compulsory Bill\n");
+        writeString(baos, "We Cannot Spell SUCCESS without U\n");
         
         // Feed 3 lines before cut
         writeBytes(baos, FEED_3_LINES);

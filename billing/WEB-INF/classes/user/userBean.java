@@ -693,4 +693,84 @@ finally
             }
         }
     }
+
+/**
+ * Returns all active users with their discount percentage.
+ * Each Vector row: [id(int), user_name(String), fullName(String), disc_per(int)]
+ */
+public Vector getAllUsersWithDiscount() throws Exception {
+    Connection con = null;
+    PreparedStatement ps = null;
+    ResultSet rs = null;
+    Vector vec = new Vector();
+    try {
+        con = util.DBConnectionManager.getConnectionFromPool();
+        ps = con.prepareStatement(
+            "SELECT id, user_name, IFNULL(fullName,'') AS fullName, IFNULL(disc_per,100) AS disc_per " +
+            "FROM users WHERE is_active = 1 ORDER BY user_name");
+        rs = ps.executeQuery();
+        while (rs.next()) {
+            Vector row = new Vector();
+            row.addElement(rs.getInt("id"));
+            row.addElement(rs.getString("user_name"));
+            row.addElement(rs.getString("fullName"));
+            row.addElement(rs.getInt("disc_per"));
+            vec.add(row);
+        }
+        return vec;
+    } finally {
+        if (rs  != null) try { rs.close();  } catch (SQLException e) { ; }
+        if (ps  != null) try { ps.close();  } catch (SQLException e) { ; }
+        if (con != null) try { con.close(); } catch (Exception e)   { ; }
+    }
+}
+
+/**
+ * Updates the disc_per (discount percentage) for a user.
+ */
+public void updateUserDiscount(int userId, int discPer) throws Exception {
+    Connection con = null;
+    PreparedStatement ps = null;
+    try {
+        con = util.DBConnectionManager.getConnectionFromPool();
+        con.setAutoCommit(false);
+        ps = con.prepareStatement("UPDATE users SET disc_per = ? WHERE id = ?");
+        ps.setInt(1, discPer);
+        ps.setInt(2, userId);
+        ps.executeUpdate();
+        con.commit();
+    } catch (Exception e) {
+        if (con != null) try { con.rollback(); } catch (Exception ex) { ; }
+        throw e;
+    } finally {
+        if (ps  != null) try { ps.close();  } catch (SQLException e) { ; }
+        if (con != null) {
+            try { con.setAutoCommit(true); con.close(); } catch (Exception e) { ; }
+        }
+    }
+}
+
+/**
+ * Returns the maximum discount percentage allowed for a user.
+ * Defaults to 100 if not set.
+ */
+public int getUserDiscPer(int userId) {
+    Connection con = null;
+    PreparedStatement ps = null;
+    ResultSet rs = null;
+    try {
+        con = util.DBConnectionManager.getConnectionFromPool();
+        ps = con.prepareStatement("SELECT IFNULL(disc_per, 100) FROM users WHERE id = ?");
+        ps.setInt(1, userId);
+        rs = ps.executeQuery();
+        if (rs.next()) return rs.getInt(1);
+    } catch (Exception e) {
+        // fall through to default
+    } finally {
+        if (rs  != null) try { rs.close();  } catch (Exception e) { ; }
+        if (ps  != null) try { ps.close();  } catch (Exception e) { ; }
+        if (con != null) try { con.close(); } catch (Exception e) { ; }
+    }
+    return 100;
+}
 }

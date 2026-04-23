@@ -1,11 +1,11 @@
-               Javera Collections               
-             4,TSMO Syed Ali Nagar              
-               Kurichi Main Road                
-               Tirunelveli-627005               
+               Rehoboth Clothing                
+     1/1197A Tambaram Vellachery Main Road      
+              Medavakkam, Chennai               
+           Customer Care:: 8056191358           
+             GSTIN: 33ABBFR0799K1ZW             
 ------------------------------------------------
-Bill: 26-47                  05-03-2026 17:54:21
-Cust: jasw
-Ph: 95957451419
+Bill: 26-72                  23-04-2026 23:22:54
+Cust: -
 ------------------------------------------------
 ITEM                        QTY      RATE    AMT
 ------------------------------------------------
@@ -15,10 +15,9 @@ Items:                                         1
 ------------------------------------------------
 TOTAL:                                 Rs 400.00
 ------------------------------------------------
-Paid:                                    Rs 0.00
-Balance:                               Rs 400.00
+Paid:                                  Rs 400.00
 ------------------------------------------------
-                   RUPEES ONLY                  
+            FOUR HUNDRED RUPEES ONLY            
              Thank You! Visit Again             
 
 

@@ -4,6 +4,7 @@ let subtotal = 0;          // Total before discount
 let totalDiscount = 0;     // Total discount value
 let totalCommission = 0;   // Total commission value
 let prodTotal = 0;
+let bypassDiscountCap = false; // true when exchange points are applied — skips userMaxDiscPer check
 let currentProductStock = 0; // Store current product's available stock
 let productQuantitiesInBill = {}; // Track quantities already added to bill by product ID
 let currentQuotationId = null; // Store current quotation ID when converting to bill
@@ -82,16 +83,65 @@ function selectCustomer(customer) {
     const commissionToggle = document.getElementById('isCommission');
     if (commissionToggle) commissionToggle.checked = (customer.isEligibleForCommission == 1);
     refreshCommissionDisplay();
-    
-    // Removed auto-selection of payment mode based on GST registration
-    
+
     removeCustomerAutocomplete();
-    
+    removePhoneAutocomplete();
+
+    // Handle exchange points
+    const ep = parseFloat(customer.exchangePoint) || 0;
+    document.getElementById('customerExchangePoint').value = ep;
+    document.getElementById('exchangePointUsed').value = 0; // reset on new customer selection
+    if (ep > 0) {
+        document.getElementById('exchangePointValue').textContent = ep.toFixed(2);
+        document.getElementById('exchangePointBanner').classList.remove('d-none');
+        Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'info',
+            title: '\u20b9' + ep.toFixed(2) + ' exchange points available!',
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true
+        });
+    } else {
+        document.getElementById('exchangePointBanner').classList.add('d-none');
+        document.getElementById('customerExchangePoint').value = 0;
+    }
+
     // Check for overdue dues first
     checkOverdueDues(customer.id);
-    
+
     // Then check credit eligibility
     checkCreditEligibility(customer.id);
+}
+
+function applyExchangePointDiscount() {
+    const ep = parseFloat(document.getElementById('customerExchangePoint').value) || 0;
+    if (ep <= 0) return;
+    // Cap only at current payable amount — exchange points bypass the userMaxDiscPer limit
+    const payable = parseFloat(document.getElementById('payableAmount').value) || 0;
+    const toUse = Math.min(ep, payable);
+    if (toUse <= 0) return;
+    document.getElementById('finalDiscount').value = toUse.toFixed(2);
+    // Bypass discount % cap — exchange points are customer-earned, not a staff discount
+    bypassDiscountCap = true;
+    updatePayableAmount();
+    bypassDiscountCap = false;
+    document.getElementById('exchangePointUsed').value = toUse.toFixed(2);
+    document.getElementById('exchangePointBanner').classList.add('d-none');
+    Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: 'success',
+        title: '\u20b9' + toUse.toFixed(2) + ' applied as exchange point discount!',
+        showConfirmButton: false,
+        timer: 2500
+    });
+}
+
+function dismissExchangePointBanner() {
+    document.getElementById('exchangePointBanner').classList.add('d-none');
+    document.getElementById('exchangePointUsed').value = 0;
 }
 
 
@@ -102,29 +152,7 @@ function checkOverdueDues(customerId) {
         return;
     }
     
-    $.ajax({
-        url: contextPath + '/billing/checkOverdueDues.jsp',
-        type: 'GET',
-        data: { customerId: customerId },
-        dataType: 'json',
-        success: function(response) {
-            if (response.hasOverdue) {
-                disableSaveButton();
-                Swal.fire({
-                    title: 'Overdue Payment Alert!',
-                    html: response.message,
-                    icon: 'warning',
-                    confirmButtonText: 'OK',
-                    confirmButtonColor: '#d33'
-                });
-            } else {
-                enableSaveButton();
-            }
-        },
-        error: function() {
-            enableSaveButton();
-        }
-    });
+    
 }
 
 function disableSaveButton() {
@@ -166,11 +194,61 @@ customerNameInput.addEventListener("keydown", function(e) {
     }
 });
 
+// ── Phone number autocomplete ───────────────────────────────────────────────
+let phoneAutocompleteTimeout;
+
+customerPhnInput.addEventListener("input", function() {
+    const q = this.value.trim();
+    clearTimeout(phoneAutocompleteTimeout);
+    removePhoneAutocomplete();
+    if (q.length < 3) return;
+
+    phoneAutocompleteTimeout = setTimeout(() => {
+        fetch(`customerAutocomplete.jsp?phone=${encodeURIComponent(q)}`)
+            .then(r => r.json())
+            .then(data => { if (data.length > 0) showPhoneAutocomplete(data); })
+            .catch(err => console.error('Phone autocomplete error:', err));
+    }, 300);
+});
+
+function showPhoneAutocomplete(customers) {
+    removePhoneAutocomplete();
+    const list = document.createElement('ul');
+    list.id = 'phoneAutocompleteList';
+    list.className = 'autocomplete-list';
+    list.style.cssText = 'position:absolute;z-index:1000;background:white;border:1px solid #ddd;list-style:none;padding:0;margin:0;max-height:200px;overflow-y:auto;width:' + customerPhnInput.offsetWidth + 'px;';
+
+    customers.forEach(customer => {
+        const item = document.createElement('li');
+        item.style.cssText = 'padding:8px 12px;cursor:pointer;border-bottom:1px solid #eee;';
+        item.textContent = customer.phone + (customer.name ? ' — ' + customer.name : '');
+        item.addEventListener('mouseenter', function() { this.style.backgroundColor = '#f0f0f0'; });
+        item.addEventListener('mouseleave', function() { this.style.backgroundColor = 'white'; });
+        item.addEventListener('click', function() { selectCustomer(customer); });
+        list.appendChild(item);
+    });
+
+    customerPhnInput.parentElement.style.position = 'relative';
+    customerPhnInput.parentElement.appendChild(list);
+}
+
+function removePhoneAutocomplete() {
+    const el = customerPhnInput.parentElement.querySelector('#phoneAutocompleteList');
+    if (el) el.remove();
+}
+
+customerPhnInput.addEventListener('keydown', function(e) {
+    const list = customerPhnInput.parentElement.querySelector('#phoneAutocompleteList');
+    if (!list) return;
+    const items = list.querySelectorAll('li');
+    if (items.length === 0) return;
+    if (e.key === 'Tab' || e.key === 'Enter') { e.preventDefault(); items[0].click(); }
+});
+
 // Close autocomplete when clicking outside
 document.addEventListener("click", function(e) {
-    if (e.target !== customerNameInput) {
-        removeCustomerAutocomplete();
-    }
+    if (e.target !== customerNameInput) removeCustomerAutocomplete();
+    if (e.target !== customerPhnInput)  removePhoneAutocomplete();
 });
         
 
@@ -187,6 +265,20 @@ function addProduct() {
     if (code === "" || name === "" || isNaN(qtyInput) || isNaN(price) || isNaN(discount)) {
         alert("Please enter valid product details!");
         return;
+    }
+
+    // Validate per-product discount does not exceed user's allowed percentage
+    if (price > 0 && userMaxDiscPer < 100) {
+        const discPct = (discount / price) * 100;
+        if (discPct > userMaxDiscPer) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Discount Exceeded',
+                html: `Product discount <b>${discPct.toFixed(2)}%</b> exceeds your allowed limit of <b>${userMaxDiscPer}%</b>.`,
+                confirmButtonText: 'OK'
+            });
+            return;
+        }
     }
 
     const productId = parseInt(document.getElementById("productCode").dataset.id || 0);
@@ -455,6 +547,27 @@ function updateTotals() {
 
 
 function updatePayableAmount() {
+    const extraDisc = parseFloat(document.getElementById("finalDiscount").value) || 0;
+
+    // Validate total (item discounts + extra discount) does not exceed user's allowed percentage
+    // bypassDiscountCap is true when exchange points are used — they are not a staff discount
+    if (!bypassDiscountCap && subtotal > 0 && userMaxDiscPer < 100) {
+        const maxAllowedDisc = (subtotal * userMaxDiscPer) / 100;
+        if (totalDiscount + extraDisc > maxAllowedDisc) {
+            const maxExtra = Math.max(0, Math.floor(maxAllowedDisc - totalDiscount));
+            // Set the capped integer value directly (field is only-numbers so no decimals)
+            document.getElementById("finalDiscount").value = maxExtra;
+            Swal.fire({
+                icon: 'warning',
+                title: 'Extra Discount Exceeded',
+                html: `Max allowed discount: <b>${userMaxDiscPer}%</b> of ₹${subtotal.toFixed(2)} = ₹${maxAllowedDisc.toFixed(2)}<br>`+
+                      `Item discounts: ₹${totalDiscount.toFixed(2)}<br>`+
+                      `Max extra discount allowed: ₹${maxExtra.toFixed(2)}`,
+                confirmButtonText: 'OK'
+            });
+        }
+    }
+
     const discount = parseFloat(document.getElementById("finalDiscount").value) || 0;
     const payable = grandTotal - discount;
     document.getElementById("payableAmount").value = payable.toFixed(3);
@@ -655,7 +768,8 @@ function saveBill() {
             balance,
             quotationId: currentQuotationId || 0,
             isEligibleForCommission: isEligibleForCommission ? 1 : 0,
-            products: JSON.stringify(products)
+            products: JSON.stringify(products),
+            exchangePointUsed: parseFloat(document.getElementById('exchangePointUsed').value) || 0
         },
         success: function(response) {
             var cleanResponse = response.trim();
@@ -1920,7 +2034,7 @@ function addProductToBillTable(product) {
     
     // Create new row with proper styling and structure
     const row = `
-        <tr id="row${count}" class="bill-item-row" style="display: table; width: 100%; table-layout: fixed; cursor: pointer;" data-commission="${productCommissionPerUnit}">
+        <tr id="row${count}" class="bill-item-row" style="display: table; width: 100%; table-layout: fixed; cursor: pointer;" data-batch-id="${product.batchId || 0}" data-commission="${productCommissionPerUnit}">
             <td style="width: 5%;">${count}</td>
             <td style="width: 10%;" data-id="${product.productId}">${product.code}</td>
             <td style="width: 22%;" data-name="${product.productName}">${product.productName}</td>

@@ -46,6 +46,11 @@ try {
         product.put("discount", row.get(6));
         product.put("total", row.get(7));
         product.put("gst", row.get(8));
+        // Look up current active batch for stock deduction
+        int prodId = ((Number) row.get(1)).intValue();
+        int batchId = 0;
+        try { batchId = bill.getProductBatchId(prodId); } catch(Exception ex) { batchId = 0; }
+        product.put("batchId", batchId);
         productsArray.put(product);
     }
     
