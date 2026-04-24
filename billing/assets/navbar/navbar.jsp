@@ -101,7 +101,7 @@ for (int i = 0; i < vecPer.size(); i++) {
         <i class="fas fa-chevron-down ms-auto"></i>
       </a>
       <div class="collapse sidebar-submenu" id="productMenu">
-        <a href="<%=request.getContextPath()%>/product/master/barCode/page.jsp" class="sidebar-subitem">Bar Code</a>
+        <!--a href="<%=request.getContextPath()%>/product/master/barCode/page.jsp" class="sidebar-subitem">Bar Code</a-->
         <a href="<%=request.getContextPath()%>/product/master/category/category.jsp" class="sidebar-subitem"><%=head1%></a>
         <a href="<%=request.getContextPath()%>/product/master/brands/brands.jsp" class="sidebar-subitem"><%=head2%></a>
         <a href="<%=request.getContextPath()%>/product/master/product/product.jsp" class="sidebar-subitem"><%=head3%></a>
@@ -329,12 +329,7 @@ for (int i = 0; i < vecPer.size(); i++) {
       </div>
     </div>
     <% } %>
-    <% if (permissions.contains(11)) { %>
-    <a href="<%=request.getContextPath()%>/cafeOrder/orderList/page.jsp" class="sidebar-item">
-      <i class="fas fa-list-alt"></i>
-      <span>Order List</span>
-    </a>
-    <% } %>
+    
   </div>
 </div>
 
