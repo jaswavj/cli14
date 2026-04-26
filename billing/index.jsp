@@ -66,153 +66,160 @@ if (submittedUser != null && submittedPass != null) {
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Login - Billing App</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <!-- Bootstrap CSS -->
+  <title>Login - JASXBILL</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
   <link href="dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="dist/fonts/css/all.min.css">
   <link rel="stylesheet" href="assets/css/theme.css">
 </head>
 <body class="login-body">
 
-  <!-- Animated Background Elements -->
-  <div class="bg-shapes">
-    <div class="shape shape-1"></div>
-    <div class="shape shape-2"></div>
-    <div class="shape shape-3"></div>
+  <!-- Animated Background -->
+  <div class="login-bg">
+    <div class="bg-orb bg-orb-1"></div>
+    <div class="bg-orb bg-orb-2"></div>
+    <div class="bg-orb bg-orb-3"></div>
   </div>
 
-  <div class="login-wrapper">
-    <!-- Hero Section -->
-    <div class="hero-section">
-        <div class="brand-section">
-          
-          <h3 class="brand-title">JASXBILL</h3>
-          <p class="brand-tagline">Smart Business Management System</p>
+  <!-- Main Login Area -->
+  <div class="login-main">
+    <div class="lc-card">
 
-      </div>
-    </div>
-
-    <!-- Login Section -->
-    <div class="login-section">
-      <div class="login-card-modern">
-        <div class="card-header-modern">
-          <h2>Welcome Back</h2>
-          <p>Sign in to access your dashboard</p>
-        </div>        
-        <form action="<%=request.getContextPath()%>/index.jsp" method="post" name="form" id="form" class="modern-form">
-          <div class="form-group-modern">
-            <label for="username" class="modern-label">
-              <i class="fa-solid fa-user"></i>
-              Username
-            </label>
-            <input type="text" 
-                   class="modern-input" 
-                   id="username" 
-                   name="username" 
-                   placeholder="Enter your username" 
-                   required 
-                   autofocus>
-          </div>
-
-          <div class="form-group-modern">
-            <label for="password" class="modern-label">
-              <i class="fa-solid fa-lock"></i>
-              Password
-            </label>
-            <input type="password" 
-                   class="modern-input" 
-                   id="password" 
-                   name="password" 
-                   placeholder="Enter your password" 
-                   required>
-          </div>
-
-          <% if (loginFailed) { %>
-            <div class="alert-modern alert-error">
-              <i class="fas fa-exclamation-circle"></i>
-              <span>Invalid username or password. Please try again.</span>
-            </div>
-          <% } %>
-          
-          <% if (licenseExpired) { %>
-            <div class="alert-modern alert-warning">
-              <i class="fas fa-exclamation-triangle"></i>
-              <div>
-                <strong>Software License Expired!</strong>
-                <p>Contact Software Team: 8667214152 </p>
-              </div>
-            </div>
-          <% } %>
-
-          <button type="submit" class="btn-modern btn-primary-modern">
-            <i class="fa-solid fa-right-to-bracket"></i>
-            <span>Sign In</span>
-          </button>
-        </form>
-        
-        <div class="card-footer-modern">
-          <p><i class="fas fa-info-circle"></i> Contact your administrator for account access</p>
+      <!-- Brand -->
+      <div class="lc-brand">
+        <div class="lc-brand-icon">
+          <i class="fas fa-file-invoice-dollar"></i>
         </div>
+        <h1 class="lc-brand-name">JASXBILL</h1>
+        <p class="lc-brand-tagline">Smart Business Management System</p>
       </div>
-    </div>
 
+      <div class="lc-divider"></div>
+
+      <div class="lc-welcome">
+        <h2>Welcome Back</h2>
+        <p>Sign in to access your dashboard</p>
+      </div>
+
+      <form action="<%=request.getContextPath()%>/index.jsp" method="post" autocomplete="off">
+
+        <!-- Username -->
+        <div class="lc-field">
+          <span class="lc-field-icon"><i class="fas fa-user"></i></span>
+          <input type="text"
+                 class="lc-input"
+                 name="username"
+                 placeholder="Username"
+                 required
+                 autofocus
+                 autocomplete="username">
+        </div>
+
+        <!-- Password -->
+        <div class="lc-field">
+          <span class="lc-field-icon"><i class="fas fa-lock"></i></span>
+          <input type="password"
+                 class="lc-input has-eye"
+                 id="lc-password"
+                 name="password"
+                 placeholder="Password"
+                 required
+                 autocomplete="current-password">
+          <button type="button" class="lc-eye-btn" onclick="toggleLcPass()" aria-label="Toggle password visibility">
+            <i class="fas fa-eye" id="lc-eye-icon"></i>
+          </button>
+        </div>
+
+        <% if (loginFailed) { %>
+        <div class="lc-alert lc-alert-error">
+          <i class="fas fa-exclamation-circle"></i>
+          <span>Invalid username or password. Please try again.</span>
+        </div>
+        <% } %>
+
+        <% if (licenseExpired) { %>
+        <div class="lc-alert lc-alert-warning">
+          <i class="fas fa-exclamation-triangle"></i>
+          <div>
+            <strong>Software License Expired!</strong>
+            <p>Contact Software Team: 8667214152</p>
+          </div>
+        </div>
+        <% } %>
+
+        <button type="submit" class="lc-btn">
+          <i class="fas fa-sign-in-alt"></i>
+          <span>Sign In</span>
+        </button>
+
+      </form>
+
+      <div class="lc-note">
+        <i class="fas fa-info-circle"></i>
+        Contact your administrator for account access
+      </div>
+
+    </div>
   </div>
 
-  <!-- Feature Cards Section -->
-  <div class="features-bottom">
-    <div class="feature-card-modern">
-      <div class="feature-icon-modern">
-        <i class="fas fa-file-invoice"></i>
-      </div>
+  <!-- Feature Strip -->
+  <div class="login-features">
+    <div class="lf-card">
+      <div class="lf-icon"><i class="fas fa-file-invoice"></i></div>
       <h3>Smart Invoicing</h3>
-      <p>Generate professional invoices with automated GST calculations</p>
+      <p>Professional invoices with automated GST</p>
     </div>
-    <div class="feature-card-modern">
-      <div class="feature-icon-modern">
-        <i class="fas fa-warehouse"></i>
-      </div>
-      <h3>Inventory Management</h3>
-      <p>Track stock, suppliers, and purchase orders in real-time</p>
+    <div class="lf-card">
+      <div class="lf-icon"><i class="fas fa-warehouse"></i></div>
+      <h3>Inventory</h3>
+      <p>Real-time stock &amp; supplier tracking</p>
     </div>
-    <div class="feature-card-modern">
-      <div class="feature-icon-modern">
-        <i class="fas fa-chart-bar"></i>
-      </div>
-      <h3>Business Analytics</h3>
-      <p>Get insights with powerful reports and dashboards</p>
+    <div class="lf-card">
+      <div class="lf-icon"><i class="fas fa-chart-bar"></i></div>
+      <h3>Analytics</h3>
+      <p>Powerful reports and dashboards</p>
     </div>
-    <div class="feature-card-modern">
-      <div class="feature-icon-modern">
-        <i class="fas fa-calculator"></i>
-      </div>
+    <div class="lf-card">
+      <div class="lf-icon"><i class="fas fa-calculator"></i></div>
       <h3>GST Compliance</h3>
-      <p>Automated tax calculations and compliance reports</p>
+      <p>Automated tax calculations</p>
     </div>
   </div>
 
-
-  <!-- Modern Footer -->
-  <footer class="modern-footer">
-    <div class="footer-container">
-      <div class="footer-brand">
+  <!-- Footer -->
+  <footer class="login-footer">
+    <div class="lfoot-inner">
+      <div class="lfoot-brand">
         <i class="fas fa-headset"></i>
         <span>24/7 Support Available</span>
       </div>
-      <div class="footer-contacts">
-        <a href="mailto:jaswavj@gmail.com" class="footer-link">
-          <i class="fa-solid fa-envelope"></i>
+      <div class="lfoot-links">
+        <a href="mailto:jaswavj@gmail.com" class="lfoot-link">
+          <i class="fas fa-envelope"></i>
           jaswavj@gmail.com
         </a>
-        <a href="tel:+918667214152" class="footer-link">
-          <i class="fa-solid fa-phone"></i>
-          +91 8667214152 or +91 9597451419
+        <a href="tel:+918667214152" class="lfoot-link">
+          <i class="fas fa-phone"></i>
+          +91 8667214152 / +91 9597451419
         </a>
       </div>
     </div>
   </footer>
 
-<!-- Bootstrap JS -->
-<script src="dist/js/bootstrap.bundle.min.js"></script>
+  <script src="dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    function toggleLcPass() {
+      var inp = document.getElementById('lc-password');
+      var ico = document.getElementById('lc-eye-icon');
+      if (inp.type === 'password') {
+        inp.type = 'text';
+        ico.classList.replace('fa-eye', 'fa-eye-slash');
+      } else {
+        inp.type = 'password';
+        ico.classList.replace('fa-eye-slash', 'fa-eye');
+      }
+    }
+  </script>
+
 </body>
 </html>
