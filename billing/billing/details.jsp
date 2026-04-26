@@ -1,18 +1,21 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8"%>
+<%@ page language="java" contentType="application/json; charset=UTF-8"%>
 <%@ page import="java.util.*" %>
 <jsp:useBean id="bill" class="billing.billingBean" />
-
 <%
 String code = request.getParameter("code");
 String priceCategoryStr = request.getParameter("priceCategory");
-int priceCategory = (priceCategoryStr != null && !priceCategoryStr.isEmpty()) ? Integer.parseInt(priceCategoryStr) : 3; // Default to Retailer (3)
+int priceCategory = (priceCategoryStr != null && !priceCategoryStr.isEmpty()) ? Integer.parseInt(priceCategoryStr) : 3;
 
-// Fetch product details: [id, name, mrp, discount]
 Vector getDet = bill.getProductUsingCode(code, priceCategory);
 
-int productId = Integer.parseInt(getDet.get(0).toString());        // prod_id
-String name = (String) getDet.get(1);      // product name
-String mrp = String.valueOf(getDet.get(2)); 
+if (getDet == null || getDet.isEmpty()) {
+    out.print("{\"error\":\"Product not found\"}");
+    return;
+}
+
+int productId = Integer.parseInt(getDet.get(0).toString());
+String name = getDet.get(1) != null ? getDet.get(1).toString().replace("\"","\\\"") : "";
+String mrp = String.valueOf(getDet.get(2));
 String discount = String.valueOf(getDet.get(3));
 int batchId = Integer.parseInt(getDet.get(4).toString());
 String unitId = getDet.size() > 5 && getDet.get(5) != null ? getDet.get(5).toString() : "";

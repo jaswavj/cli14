@@ -120,7 +120,7 @@
                                             class="form-control" placeholder="" value="1" min="1"><label id="qtyLabel"> Qty </label>
                                     </div>
                                     <div class="col-2 input-outline"><input type="number" id="productPrice"
-                                            class="form-control" placeholder="" min="0"><label> Price </label></div>
+                                            class="form-control" placeholder="" min="0" disabled><label> Price </label></div>
                                     <div class="col-1 input-outline"><input type="text" id="productDiscount"
                                             class="form-control only-numbers" placeholder="" value="0"
                                             oninput="setDefaultValue(this);"><label> Disc</label></div>
@@ -311,6 +311,23 @@
                             <!-- Modals -->
                             <%@ include file="duplicateBillModal.jsp" %>
                             <%@ include file="quotationList.jsp" %>
+
+                            <!-- Product Picker Modal (duplicate code) -->
+                            <div class="modal fade" id="productPickerModal" tabindex="-1" aria-labelledby="productPickerModalLabel" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content">
+                                        <div class="modal-header bg-primary text-white py-2">
+                                            <h6 class="modal-title mb-0" id="productPickerModalLabel">
+                                                <i class="fa-solid fa-layer-group me-2"></i>Multiple products found — pick one
+                                            </h6>
+                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body p-2">
+                                            <div id="productPickerList" class="list-group list-group-flush"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                             
                             <!-- Order List Modal -->
                             <div class="modal fade" id="orderListModal" tabindex="-1" aria-labelledby="orderListModalLabel" aria-hidden="true">

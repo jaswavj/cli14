@@ -876,45 +876,102 @@ document.getElementById("productCode").addEventListener("keydown", function (e) 
 });
 
 function fetchProductDetails(code) {
-    // Since we removed price categories and always use MRP, default to retailer (3)
     const priceCategory = 3;
-    
+
+    $.ajax({
+        url: contextPath + "/billing/getProductsByCode.jsp",
+        type: "GET",
+        data: { code: code, priceCategory: priceCategory },
+        success: function (response) {
+            let products;
+            try {
+                // jQuery may auto-parse JSON when contentType is application/json
+                products = (typeof response === 'string') ? JSON.parse(response.trim()) : response;
+            } catch(e) {
+                console.error("getProductsByCode.jsp parse error. Raw response:", response);
+                fetchProductDetailsFallback(code);
+                return;
+            }
+
+            if (!Array.isArray(products) || products.length === 0) {
+                // Fall back to original single-result endpoint
+                fetchProductDetailsFallback(code);
+                return;
+            }
+            if (products.length === 1) {
+                fillProductFromData(products[0]);
+                return;
+            }
+            // Multiple matches — show picker modal
+            showProductPickerModal(products);
+        },
+        error: function (xhr) {
+            console.error("Error fetching products by code. Status:", xhr.status, xhr.responseText);
+            fetchProductDetailsFallback(code);
+        }
+    });
+}
+
+function fetchProductDetailsFallback(code) {
+    const priceCategory = 3;
     $.ajax({
         url: contextPath + "/billing/details.jsp",
         type: "GET",
         data: { code: code, priceCategory: priceCategory },
         success: function (response) {
-            const data = JSON.parse(response);
-
-            $('#productName').val(data.name).prop('disabled', true);
-            $('#productPrice').val(data.mrp);
-            $('#productDiscount').val(data.discount);
-
-            $('#productCode').data('id', data.id)[0].dataset.id = data.id;
-            $('#productCode').data('batchId', data.batchId)[0].dataset.batchId = data.batchId;
-            $('#productCode')[0].dataset.commission = data.commission || '0';
-
-            // Set unit information
-            $('#productUnitId').val(data.unitId || '');
-            $('#productUnitName').val(data.unitName || '');
-            $('#productConvertionUnit').val(data.convertionUnit || '');
-            
-            // Handle unit select box
-            handleUnitSelection(data.unitName || '', data.convertionUnit || '');
-
-            // Fetch and store stock
-            fetchProductStock(data.id);
-
-            setTimeout(() => {
-                const qtyField = document.getElementById("productQty");
-                qtyField.focus();
-                qtyField.select();
-            }, 10);
+            let data;
+            try { data = JSON.parse(response.trim()); } catch(e) { data = null; }
+            if (!data || data.error || !data.id) {
+                Swal.fire({ icon: 'warning', title: 'Not Found', text: 'No product found for code: ' + code, confirmButtonText: 'OK' });
+                return;
+            }
+            fillProductFromData(data);
         },
         error: function () {
-            console.error("Error sending data to detail.jsp");
+            Swal.fire({ icon: 'warning', title: 'Not Found', text: 'No product found for code: ' + code, confirmButtonText: 'OK' });
         }
     });
+}
+
+function fillProductFromData(data) {
+    $('#productName').val(data.name).prop('disabled', true);
+    $('#productPrice').val(data.mrp);
+    $('#productDiscount').val(data.discount);
+
+    $('#productCode').data('id', data.id)[0].dataset.id = data.id;
+    $('#productCode').data('batchId', data.batchId)[0].dataset.batchId = data.batchId;
+    $('#productCode')[0].dataset.commission = data.commission || '0';
+
+    $('#productUnitId').val(data.unitId || '');
+    $('#productUnitName').val(data.unitName || '');
+    $('#productConvertionUnit').val(data.convertionUnit || '');
+
+    handleUnitSelection(data.unitName || '', data.convertionUnit || '');
+    fetchProductStock(data.id);
+
+    setTimeout(() => {
+        const qtyField = document.getElementById("productQty");
+        qtyField.focus();
+        qtyField.select();
+    }, 10);
+}
+
+function showProductPickerModal(products) {
+    const list = document.getElementById('productPickerList');
+    list.innerHTML = '';
+    products.forEach(function(p) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'list-group-item list-group-item-action d-flex justify-content-between align-items-center';
+        btn.innerHTML = '<span><strong>' + p.name + '</strong></span>'
+            + '<span class="badge bg-primary rounded-pill ms-2">Rs ' + parseFloat(p.mrp).toFixed(2) + '</span>';
+        btn.addEventListener('click', function () {
+            bootstrap.Modal.getInstance(document.getElementById('productPickerModal')).hide();
+            fillProductFromData(p);
+        });
+        list.appendChild(btn);
+    });
+    new bootstrap.Modal(document.getElementById('productPickerModal')).show();
 }
 let productNameSuggestions = [];
 

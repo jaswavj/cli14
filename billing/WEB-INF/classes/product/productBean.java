@@ -2886,13 +2886,16 @@ public Vector getCategorySalesStats(String fromDate, String toDate) throws Excep
             "SELECT c.id, c.name," +
             "  COALESCE(SUM(bd.qty), 0)      AS total_qty," +
             "  COALESCE(SUM(bd.total), 0)    AS total_amount," +
-            "  COUNT(DISTINCT b.id)          AS bill_count," +
+            "  COUNT(DISTINCT bd.bill_id)    AS bill_count," +
             "  COUNT(DISTINCT p.id)          AS product_count" +
             " FROM prod_category c" +
             " LEFT JOIN prod_product p ON p.category_id = c.id" +
-            " LEFT JOIN prod_bill_details bd ON bd.prod_id = p.id" +
-            " LEFT JOIN prod_bill b ON b.id = bd.bill_id AND b.is_cancelled = 0" +
-            "   AND b.date BETWEEN ? AND ?" +
+            " LEFT JOIN (" +
+            "   SELECT bd2.prod_id, bd2.qty, bd2.total, bd2.bill_id" +
+            "   FROM prod_bill_details bd2" +
+            "   JOIN prod_bill b2 ON b2.id = bd2.bill_id" +
+            "     AND b2.is_cancelled = 0 AND b2.date BETWEEN ? AND ?" +
+            " ) bd ON bd.prod_id = p.id" +
             " WHERE c.is_active = 1" +
             " GROUP BY c.id, c.name" +
             " ORDER BY total_amount DESC";

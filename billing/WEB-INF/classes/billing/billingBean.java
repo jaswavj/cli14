@@ -90,6 +90,61 @@ public Vector getProductUsingCode(String code, int priceCategory) throws Excepti
 			}
 		}
 }
+
+/**
+ * Returns ALL products matching the given code (for duplicate code detection).
+ * Each inner Vector has: [id, name, mrp, discount, batchId, unitId, unitName, commission, convertionUnit]
+ */
+public Vector getAllProductsByCode(String code, int priceCategory) throws Exception
+	{
+	Connection con 			= null;
+	PreparedStatement pt 	= null;
+	ResultSet rs			= null;
+	try
+		{
+		con = util.DBConnectionManager.getConnectionFromPool();
+		Vector results = new Vector();
+
+		pt = con.prepareStatement("SELECT "
+				+ " a.id, a.name,"
+				+ " b.mrp AS selected_mrp,"
+				+ " ROUND(CASE"
+				+ "   WHEN b.disc_type = 1 THEN b.discount"
+				+ "   WHEN b.disc_type = 2 THEN (b.mrp * b.discount) / 100"
+				+ "   ELSE 0 END, 2) AS discount_amount,"
+				+ " b.id, a.unit_id, IFNULL(u.name,'') AS unit_name,"
+				+ " IFNULL(b.commission,0) AS commission,"
+				+ " IFNULL(u.convertion_unit,'') AS convertion_unit"
+				+ " FROM prod_product a"
+				+ " JOIN prod_batch b ON b.product_id = a.id"
+				+ " LEFT JOIN prod_units u ON u.id = a.unit_id"
+				+ " WHERE a.code = ?");
+		pt.setString(1, code);
+		rs = pt.executeQuery();
+		while (rs.next())
+			{
+			Vector row = new Vector();
+			row.addElement(rs.getString(1));
+			row.addElement(rs.getString(2));
+			row.addElement(rs.getString(3));
+			row.addElement(rs.getString(4));
+			row.addElement(rs.getString(5));
+			row.addElement(rs.getString(6));
+			row.addElement(rs.getString(7));
+			row.addElement(rs.getString(8));
+			row.addElement(rs.getString(9));
+			results.add(row);
+			}
+		return results;
+		}
+	finally
+		{
+		if (rs  != null) try { rs.close();  } catch (Exception e) {}
+		if (pt  != null) try { pt.close();  } catch (Exception e) {}
+		if (con != null) try { con.close(); } catch (Exception e) {}
+		}
+	}
+
 public Vector getProductUsingName(String productName) throws Exception
 	{
 	return getProductUsingName(productName, 3); // Default to Retailer (3)

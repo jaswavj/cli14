@@ -45,13 +45,25 @@
 			<path>product\productBean.java</path>
 			<source>true</source>
 			<index>1</index>
-			<active>true</active>
+			<active>false</active>
 		</docitem>
 		<docitem>
 			<path>user\userBean.java</path>
 			<source>true</source>
 			<index>2</index>
 			<active>false</active>
+		</docitem>
+		<docitem>
+			<path>util\DBConnectionManager.java</path>
+			<source>true</source>
+			<index>3</index>
+			<active>false</active>
+		</docitem>
+		<docitem>
+			<path>print\POSPrinter.java</path>
+			<source>true</source>
+			<index>4</index>
+			<active>true</active>
 		</docitem>
 	</open_files>
 </workspace_user>
