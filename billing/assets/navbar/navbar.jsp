@@ -166,7 +166,17 @@ for (int i = 0; i < vecPer.size(); i++) {
         <i class="fas fa-chevron-down ms-auto"></i>
       </a>
       <div class="collapse sidebar-submenu" id="stockReportMenu">
-        <a href="<%=request.getContextPath()%>/reports/currentStock/page1.jsp" class="sidebar-subitem">Current Stock</a>
+        <!-- Current Stock Submenu -->
+        <div class="sidebar-submenu-item">
+          <a href="#" class="sidebar-subitem" data-bs-toggle="collapse" data-bs-target="#currentStockMenu">
+            <i class="fas fa-boxes me-2"></i>Current Stock
+            <i class="fas fa-chevron-down ms-auto"></i>
+          </a>
+          <div class="collapse sidebar-submenu" id="currentStockMenu">
+            <a href="<%=request.getContextPath()%>/reports/currentStock/page1.jsp" class="sidebar-subitem">Stock Details</a>
+            <a href="<%=request.getContextPath()%>/reports/currentStock/allStock.jsp" class="sidebar-subitem">All Stock</a>
+          </div>
+        </div>
         <a href="<%=request.getContextPath()%>/reports/prodTransaction/page.jsp" class="sidebar-subitem"><%=head3%> Transaction</a>
         <a href="<%=request.getContextPath()%>/reports/stockAdj/page.jsp" class="sidebar-subitem">Stock Adjustment</a>
       </div>

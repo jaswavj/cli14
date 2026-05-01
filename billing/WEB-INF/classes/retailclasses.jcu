@@ -45,7 +45,7 @@
 			<path>product\productBean.java</path>
 			<source>true</source>
 			<index>1</index>
-			<active>false</active>
+			<active>true</active>
 		</docitem>
 		<docitem>
 			<path>user\userBean.java</path>
@@ -63,7 +63,7 @@
 			<path>print\POSPrinter.java</path>
 			<source>true</source>
 			<index>4</index>
-			<active>true</active>
+			<active>false</active>
 		</docitem>
 	</open_files>
 </workspace_user>

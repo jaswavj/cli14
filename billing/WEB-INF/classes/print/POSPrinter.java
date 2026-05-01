@@ -264,7 +264,7 @@ public class POSPrinter {
             if (logoFile.exists()) {
                 Image logo = Image.getInstance(logoFile.getAbsolutePath());
                 logo.setAlignment(Element.ALIGN_CENTER);
-                float maxWidth = pageWidth * 0.5f;
+                float maxWidth = pageWidth * 0.75f;
                 if (logo.getWidth() > maxWidth) {
                     logo.scaleToFit(maxWidth, 1000);
                 }
@@ -538,8 +538,8 @@ public class POSPrinter {
             java.awt.image.BufferedImage original = javax.imageio.ImageIO.read(logoFile);
             if (original == null) return;
 
-            // Medium size: 200px wide for 80mm, 150px for 58mm
-            int targetWidth = (RECEIPT_WIDTH == RECEIPT_WIDTH_58MM) ? 150 : 200;
+                // Medium size: 200px wide for 80mm, 150px for 58mm
+                int targetWidth = (RECEIPT_WIDTH == RECEIPT_WIDTH_58MM) ? 150 : 200;
             int targetHeight = (int)((double)original.getHeight() / original.getWidth() * targetWidth);
             if (targetHeight < 1) return;
 
@@ -551,8 +551,20 @@ public class POSPrinter {
             g2d.drawImage(original, 0, 0, targetWidth, targetHeight, null);
             g2d.dispose();
 
+            // Build a full-width canvas and place logo centered.
+            // This works even on printers that ignore alignment for raster image commands.
+            int paperWidthPx = (RECEIPT_WIDTH == RECEIPT_WIDTH_58MM) ? 384 : 576;
+            java.awt.image.BufferedImage centered = new java.awt.image.BufferedImage(
+                    paperWidthPx, targetHeight, java.awt.image.BufferedImage.TYPE_INT_RGB);
+            java.awt.Graphics2D gCentered = centered.createGraphics();
+            gCentered.setColor(java.awt.Color.WHITE);
+            gCentered.fillRect(0, 0, paperWidthPx, targetHeight);
+            int xOffset = Math.max(0, (paperWidthPx - targetWidth) / 2);
+            gCentered.drawImage(scaled, xOffset, 0, null);
+            gCentered.dispose();
+
             // GS v 0 – Print raster bit image
-            int widthBytes = (targetWidth + 7) / 8;
+            int widthBytes = (paperWidthPx + 7) / 8;
             baos.write(new byte[]{0x1D, 0x76, 0x30, 0x00});
             baos.write(widthBytes & 0xFF);
             baos.write((widthBytes >> 8) & 0xFF);
@@ -564,8 +576,8 @@ public class POSPrinter {
                     int b = 0;
                     for (int bit = 0; bit < 8; bit++) {
                         int x = xByte * 8 + bit;
-                        if (x < targetWidth) {
-                            int rgb = scaled.getRGB(x, y);
+                        if (x < paperWidthPx) {
+                            int rgb = centered.getRGB(x, y);
                             int r = (rgb >> 16) & 0xFF;
                             int g = (rgb >> 8) & 0xFF;
                             int bl = rgb & 0xFF;

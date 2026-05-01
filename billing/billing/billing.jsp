@@ -16,6 +16,21 @@
                 <title>Billing - Billing App</title>
                 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
                 <jsp:include page="/assets/common/head.jsp" />
+                <style>
+                    .billing-table thead th,
+                    .billing-table tbody td {
+                        padding: 0.35rem 0.5rem !important;
+                        vertical-align: middle;
+                    }
+
+                    .billing-table .discount-rs,
+                    .billing-table .discount-pct {
+                        height: 30px;
+                        min-height: 30px;
+                        padding: 2px 8px;
+                        margin: 0 !important;
+                    }
+                </style>
             </head>
 
 <body class="billing-page-body">
@@ -70,22 +85,9 @@
                                             <i class="fa-solid fa-clock"></i> HOLD LIST
                                         </button>
                                     </div>
-                                    <div class="col-2">
-                                        <div class="form-check form-switch" style="padding-top: 8px; background: none;">
-                                            <input class="form-check-input" type="checkbox" id="isTaxBill" checked style="cursor: pointer;">
-                                            <label class="form-check-label" for="isTaxBill" style="cursor: pointer; font-weight: 500;">
-                                                <i class="fa-solid fa-receipt"></i> Tax Bill
-                                            </label>
-                                        </div>
-                                    </div>
-                                    <div class="col-2">
-                                        <div class="form-check form-switch" style="padding-top: 8px; background: none;">
-                                            <input class="form-check-input" type="checkbox" id="isCommission" style="cursor: pointer;">
-                                            <label class="form-check-label" for="isCommission" style="cursor: pointer; font-weight: 500;">
-                                                <i class="fa-solid fa-percent"></i> Commission
-                                            </label>
-                                        </div>
-                                    </div>
+                                    <!-- Hidden default values -->
+                                    <input type="hidden" id="isTaxBill" value="1" />
+                                    <input type="hidden" id="isCommission" value="0" />
 
                                     
                                     
@@ -142,13 +144,13 @@
                                     <tr style="display: table; width: 100%; table-layout: fixed;">
                                         <th style="width: 5%;">#</th>
                                         <th style="width: 10%;">Code</th>
-                                        <th style="width: 22%;">
+                                        <th style="width: 15%;">
                                             Item Name<%//=head3%>
                                         </th>
                                         <th style="width: 8%;">Qty</th>
                                         <th style="width: 10%;">Price</th>
-                                        <th style="width: 10%;">Discount</th>
-                                        <th style="width: 10%;">Commission</th>
+                                        <th style="width: 8%;">Disc RS</th>
+                                        <th style="width: 8%;">Disc %</th>
                                         <th style="width: 10%;">Total</th>
                                         <th style="width: 15%;">Action</th>
                                     </tr>
@@ -156,11 +158,11 @@
                                 <tbody id="billBody" style="display: block; overflow-y: auto; flex-grow: 1;">
                                     <!-- Rows go here -->
                                     <!-- Empty rows to maintain minimum 5 row height -->
-                                    <tr class="empty-row" style="display: table; width: 100%; table-layout: fixed;"><td style="width: 5%;">&nbsp;</td><td style="width: 10%;">&nbsp;</td><td style="width: 22%;">&nbsp;</td><td style="width: 8%;">&nbsp;</td><td style="width: 10%;">&nbsp;</td><td style="width: 10%;">&nbsp;</td><td style="width: 10%;">&nbsp;</td><td style="width: 10%;">&nbsp;</td><td style="width: 15%;">&nbsp;</td></tr>
-                                    <tr class="empty-row" style="display: table; width: 100%; table-layout: fixed;"><td style="width: 5%;">&nbsp;</td><td style="width: 10%;">&nbsp;</td><td style="width: 22%;">&nbsp;</td><td style="width: 8%;">&nbsp;</td><td style="width: 10%;">&nbsp;</td><td style="width: 10%;">&nbsp;</td><td style="width: 10%;">&nbsp;</td><td style="width: 10%;">&nbsp;</td><td style="width: 15%;">&nbsp;</td></tr>
-                                    <tr class="empty-row" style="display: table; width: 100%; table-layout: fixed;"><td style="width: 5%;">&nbsp;</td><td style="width: 10%;">&nbsp;</td><td style="width: 22%;">&nbsp;</td><td style="width: 8%;">&nbsp;</td><td style="width: 10%;">&nbsp;</td><td style="width: 10%;">&nbsp;</td><td style="width: 10%;">&nbsp;</td><td style="width: 10%;">&nbsp;</td><td style="width: 15%;">&nbsp;</td></tr>
-                                    <tr class="empty-row" style="display: table; width: 100%; table-layout: fixed;"><td style="width: 5%;">&nbsp;</td><td style="width: 10%;">&nbsp;</td><td style="width: 22%;">&nbsp;</td><td style="width: 8%;">&nbsp;</td><td style="width: 10%;">&nbsp;</td><td style="width: 10%;">&nbsp;</td><td style="width: 10%;">&nbsp;</td><td style="width: 10%;">&nbsp;</td><td style="width: 15%;">&nbsp;</td></tr>
-                                    <tr class="empty-row" style="display: table; width: 100%; table-layout: fixed;"><td style="width: 5%;">&nbsp;</td><td style="width: 10%;">&nbsp;</td><td style="width: 22%;">&nbsp;</td><td style="width: 8%;">&nbsp;</td><td style="width: 10%;">&nbsp;</td><td style="width: 10%;">&nbsp;</td><td style="width: 10%;">&nbsp;</td><td style="width: 10%;">&nbsp;</td><td style="width: 15%;">&nbsp;</td></tr>
+                                    <tr class="empty-row" style="display: table; width: 100%; table-layout: fixed;"><td style="width: 5%;">&nbsp;</td><td style="width: 10%;">&nbsp;</td><td style="width: 15%;">&nbsp;</td><td style="width: 8%;">&nbsp;</td><td style="width: 10%;">&nbsp;</td><td style="width: 8%;">&nbsp;</td><td style="width: 8%;">&nbsp;</td><td style="width: 10%;">&nbsp;</td><td style="width: 15%;">&nbsp;</td></tr>
+                                    <tr class="empty-row" style="display: table; width: 100%; table-layout: fixed;"><td style="width: 5%;">&nbsp;</td><td style="width: 10%;">&nbsp;</td><td style="width: 15%;">&nbsp;</td><td style="width: 8%;">&nbsp;</td><td style="width: 10%;">&nbsp;</td><td style="width: 8%;">&nbsp;</td><td style="width: 8%;">&nbsp;</td><td style="width: 10%;">&nbsp;</td><td style="width: 15%;">&nbsp;</td></tr>
+                                    <tr class="empty-row" style="display: table; width: 100%; table-layout: fixed;"><td style="width: 5%;">&nbsp;</td><td style="width: 10%;">&nbsp;</td><td style="width: 15%;">&nbsp;</td><td style="width: 8%;">&nbsp;</td><td style="width: 10%;">&nbsp;</td><td style="width: 8%;">&nbsp;</td><td style="width: 8%;">&nbsp;</td><td style="width: 10%;">&nbsp;</td><td style="width: 15%;">&nbsp;</td></tr>
+                                    <tr class="empty-row" style="display: table; width: 100%; table-layout: fixed;"><td style="width: 5%;">&nbsp;</td><td style="width: 10%;">&nbsp;</td><td style="width: 15%;">&nbsp;</td><td style="width: 8%;">&nbsp;</td><td style="width: 10%;">&nbsp;</td><td style="width: 8%;">&nbsp;</td><td style="width: 8%;">&nbsp;</td><td style="width: 10%;">&nbsp;</td><td style="width: 15%;">&nbsp;</td></tr>
+                                    <tr class="empty-row" style="display: table; width: 100%; table-layout: fixed;"><td style="width: 5%;">&nbsp;</td><td style="width: 10%;">&nbsp;</td><td style="width: 15%;">&nbsp;</td><td style="width: 8%;">&nbsp;</td><td style="width: 10%;">&nbsp;</td><td style="width: 8%;">&nbsp;</td><td style="width: 8%;">&nbsp;</td><td style="width: 10%;">&nbsp;</td><td style="width: 15%;">&nbsp;</td></tr>
                                 </tbody>
                             </table>
                         </div>
@@ -184,13 +186,7 @@
                                             <label>Discount</label>
                                         </div>
                                     </div>
-                                    <div class="col-6 col-md-4 col-lg">
-                                        <div class="input-outline">
-                                            <input type="text" class="form-control only-numbers red-text"
-                                                id="commissionTotal" value="0" readonly>
-                                            <label>Commission</label>
-                                        </div>
-                                    </div>
+
                                     <div class="col-6 col-md-4 col-lg">
                                         <div class="input-outline">
                                             <input type="text" class="form-control only-numbers red-text"
@@ -208,7 +204,7 @@
                                     </div>
                                     <div class="col-6 col-md-4 col-lg">
                                         <div class="input-outline">
-                                            <input type="text" class="form-control only-numbers red-text"
+                                            <input type="text" class="form-control only-numbers red-text" style="font-weight: bold; font-size: 1.25rem;"
                                                 id="payableAmount" value="0" readonly>
                                             <label>Payable</label>
                                         </div>
