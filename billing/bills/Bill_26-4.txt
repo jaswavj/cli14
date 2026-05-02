@@ -6,33 +6,33 @@
            Customer Care:: 8056191358           
              GSTIN: 33ABBFR0799K1ZW             
 ------------------------------------------------
-Bill: 26-1                   02-05-2026 15:43:05
+Bill: 26-4                   02-05-2026 15:53:17
 Cust: -
 ------------------------------------------------
 ITEM                     QTY    DISC         AMT
                         RATE    GST%      GSTAMT
 ------------------------------------------------
-1.DUPATTA               5.00    0.00     2245.00
-                      449.00      5%      106.90
+1.FANCY BLOUSE          1.00    0.00      299.00
+                      299.00      5%       14.24
 
 ------------------------------------------------
-Items:                                         5
+Items:                                         1
 ------------------------------------------------
-TOTAL:                                Rs 2245.00
+TOTAL:                                 Rs 299.00
 ------------------------------------------------
-Paid:                                 Rs 2245.00
+Cash & Bank Paid:                      Rs 299.00
 ------------------------------------------------
                   GST SUMMARY                   
 ------------------------------------------------
 Base Amt            SGST        CGST       TOTAL
-2138.10            53.45       53.45     2245.00
+284.76              7.12        7.12      299.00
 ------------------------------------------------
-Total GST   :                          Rs 106.90
-Total Sales :                         Rs 2245.00
+Total GST   :                           Rs 14.24
+Total Sales :                          Rs 299.00
 Total Savings:                           Rs 0.00
-Nett Sales  :                         Rs 2245.00
+Nett Sales  :                          Rs 299.00
 ------------------------------------------------
-TWO THOUSAND TWO HUNDRED FORTY FIVE RUPEES ONLY 
+      TWO HUNDRED NINETY NINE RUPEES ONLY       
 ------------------------------------------------
              THANK YOU, VISIT AGAIN             
      No Refund, No Exchange for Offer Items     

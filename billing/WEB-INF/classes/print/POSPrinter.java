@@ -422,7 +422,18 @@ public class POSPrinter {
         addPdfTotalRow(document, "TOTAL:", "Rs " + df.format(finalPaid), fontLarge);
         addPdfDivider(document, pageWidth);
         
-        addPdfTotalRow(document, "Paid:", "Rs " + df.format(paid), fontNormal);
+        double[] cashBank = bill.getCashBankPaid(billNo);
+        double cashPaid = cashBank[0];
+        double bankPaid = cashBank[1];
+        String paidLabel;
+        if (cashPaid > 0 && bankPaid > 0) {
+            paidLabel = "Cash & Bank Paid:";
+        } else if (bankPaid > 0) {
+            paidLabel = "Bank Paid:";
+        } else {
+            paidLabel = "Cash Paid:";
+        }
+        addPdfTotalRow(document, paidLabel, "Rs " + df.format(paid), fontNormal);
         
         if (balance != 0) {
             String label = balance > 0 ? "Balance Due:" : "Change:";
@@ -774,7 +785,18 @@ public class POSPrinter {
         sb.append(formatTotalRow("TOTAL:", "Rs " + df.format(finalPaid)));
         sb.append(divider());
         
-        sb.append(formatTotalRow("Paid:", "Rs " + df.format(paid)));
+        double[] cashBank = bill.getCashBankPaid(billNo);
+        double cashPaid = cashBank[0];
+        double bankPaid = cashBank[1];
+        String paidLabel;
+        if (cashPaid > 0 && bankPaid > 0) {
+            paidLabel = "Cash & Bank Paid:";
+        } else if (bankPaid > 0) {
+            paidLabel = "Bank Paid:";
+        } else {
+            paidLabel = "Cash Paid:";
+        }
+        sb.append(formatTotalRow(paidLabel, "Rs " + df.format(paid)));
         
         if (balance != 0) {
             String label = balance > 0 ? "Balance:" : "Change:";

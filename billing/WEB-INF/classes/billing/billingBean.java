@@ -2503,6 +2503,34 @@ public Vector getDueSupplierPaidList(int id) throws Exception {
         if (con != null) try { con.close(); } catch (Exception e) {}
     }
 }
+/**
+ * Returns double[]{cashPaid, bankPaid} for the given bill_display number.
+ * Used by POSPrinter to show "Cash Paid", "Bank Paid", or "Cash & Bank Paid".
+ */
+public double[] getCashBankPaid(String bill) throws Exception {
+    Connection con = null;
+    PreparedStatement pt = null;
+    ResultSet rs = null;
+    try {
+        con = util.DBConnectionManager.getConnectionFromPool();
+        pt = con.prepareStatement(
+            "SELECT IFNULL(b.cash,0), IFNULL(b.bank,0) " +
+            "FROM prod_bill a " +
+            "JOIN prod_bill_payment b ON b.bill_id = a.id " +
+            "WHERE a.bill_display = ?");
+        pt.setString(1, bill);
+        rs = pt.executeQuery();
+        if (rs.next()) {
+            return new double[]{rs.getDouble(1), rs.getDouble(2)};
+        }
+        return new double[]{0, 0};
+    } finally {
+        if (rs != null) try { rs.close(); } catch (Exception e) {}
+        if (pt != null) try { pt.close(); } catch (Exception e) {}
+        if (con != null) try { con.close(); } catch (Exception e) {}
+    }
+}
+
 public double getPaidTotal(String bill)throws Exception
 {
 		Connection con			= null;
