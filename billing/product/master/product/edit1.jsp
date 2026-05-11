@@ -48,13 +48,7 @@ try {
     String originalName = prod.getProductNameById(productId);
     
     // Only check for duplicate names if the name actually changed
-    if (!newProduct.trim().equalsIgnoreCase(originalName.trim())) {
-        int prodId = prod.checkTheProductNameExistId(newProduct, productId);
-        if (prodId != 0) {
-            response.sendRedirect(request.getContextPath() + "/product/master/product/product.jsp?msg=Object+name+already+exists!&type=warning");
-            return;
-        }
-    }
+    
 
     /*if (codeId != 0) {
         response.sendRedirect(request.getContextPath() + "/product/master/product/product.jsp?msg=Object+code+already+exists!&type=warning");

@@ -75,7 +75,12 @@
     <%@ include file="/assets/navbar/navbar.jsp" %>
 
     <div class="container-fluid mt-4">
-        <h4 class="mb-3"><i class="fas fa-exchange-alt me-2 text-primary"></i>Product Exchange</h4>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4 class="mb-0"><i class="fas fa-exchange-alt me-2 text-primary"></i>Product Exchange</h4>
+            <button type="button" class="btn btn-outline-primary btn-sm" onclick="window.location.href='<%=contextPathExc%>/billing/billing.jsp'">
+                <i class="fas fa-cash-register me-1"></i>BILLING
+            </button>
+        </div>
 
         <!-- Bill Search -->
         <div class="card mb-4 bill-card shadow-sm">

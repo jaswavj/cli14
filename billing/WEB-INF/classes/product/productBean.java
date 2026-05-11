@@ -3433,21 +3433,34 @@ public Vector getAutoLoadDetails(String name,int typeId) throws Exception
 	}
 ///////////////////////-----------------------------
 public String getProductFullDetails(String productName) throws Exception
+    {
+    return getProductFullDetails(productName, "");
+    }
+///////////////////////-----------------------------
+public String getProductFullDetails(String productName, String productCode) throws Exception
 	{
 	Connection con 			= null;
 	PreparedStatement pt 	= null; 
 	ResultSet rs			= null;
-	ResultSet rs1			= null;
 	try
 		{	
 		con					= util.DBConnectionManager.getConnectionFromPool();
 
 		String productDetails	= "";
-		String Qry				= "";
-		
+        String sql = "SELECT a.name AS prodsName,b.name AS catName,c.name AS brandName,d.name AS batchNo,d.cost,d.mrp,a.id AS prodsId,b.id AS catId,c.id AS brandId,d.id AS batchId,COALESCE(u.name,'') AS unitName,COALESCE(u.convertion_unit,'') AS convertion_unit,COALESCE(u.convertion_calculation,1) AS convertion_calculation,COALESCE(a.gst,0) AS gst FROM prod_product a JOIN prod_category b ON a.category_id=b.id JOIN prod_brands c ON a.brand_id=c.id JOIN prod_batch d ON a.id=d.product_id LEFT JOIN prod_units u ON u.id=a.unit_id WHERE a.name=?";
+        boolean hasProductCode = (productCode != null && productCode.trim().length() > 0);
+        if(hasProductCode)
+            {
+            sql += " AND a.code=?";
+            }
+        sql += " ORDER BY d.id DESC LIMIT 1";
 
-		pt = con.prepareStatement("SELECT a.name AS prodsName,b.name AS catName,c.name AS brandName,d.name AS batchNo,d.cost,d.mrp,a.id AS prodsId,b.id AS catId,c.id AS brandId,d.id AS batchId,COALESCE(u.name,'') AS unitName,COALESCE(u.convertion_unit,'') AS convertion_unit,COALESCE(u.convertion_calculation,1) AS convertion_calculation,COALESCE(a.gst,0) AS gst FROM prod_product a JOIN prod_category b ON a.category_id=b.id JOIN prod_brands c ON a.brand_id=c.id JOIN prod_batch d ON a.id=d.product_id LEFT JOIN prod_units u ON u.id=a.unit_id WHERE a.name=?");
-		pt.setString(1,productName);									  
+        pt = con.prepareStatement(sql);
+        pt.setString(1,productName);
+        if(hasProductCode)
+            {
+            pt.setString(2,productCode.trim());
+            }
 		rs = pt.executeQuery();
 		if(rs.next())
 			{	
@@ -3479,12 +3492,6 @@ public String getProductFullDetails(String productName) throws Exception
 			{
 	  		try	 { rs.close(); } catch (SQLException e) { ; }
 	  		rs = null;
-			}
-		
-		if (rs1 != null)
-			{
-	  		try	 { rs1.close(); } catch (SQLException e) { ; }
-	  		rs1 = null;
 			}
 					
 		if (pt != null)

@@ -1,9 +1,23 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8"%>
 <%@ page import="java.util.*" %>
+<%@ page import="java.math.BigDecimal" %>
 <jsp:useBean id="ph" class="product.productBean" />
 
 <%
-int Status 				= Integer.parseInt(request.getParameter("status").toString());
+String statusParam = request.getParameter("status");
+if (statusParam == null || statusParam.trim().isEmpty()) {
+	out.print("Invalid Status");
+	return;
+}
+
+int Status = 0;
+try {
+	Status = Integer.parseInt(statusParam.trim());
+} catch (NumberFormatException e) {
+	out.print("Invalid Status");
+	return;
+}
+
 Integer uid				= (Integer) session.getAttribute("userId");
 if (uid == null) {
 	uid = 1; // Fallback if session is lost
@@ -29,7 +43,8 @@ if(Status == 0)
 if(Status == 1)
 	{
 		String productName		= request.getParameter("productName").toString();
-		String productDetails	= ph.getProductFullDetails(productName); 
+		String productCode		= request.getParameter("productCode");
+		String productDetails	= ph.getProductFullDetails(productName, productCode);
 		out.print(productDetails);
 	}
 ///////////////////////
@@ -132,6 +147,69 @@ if(Status == 7)
 		int supplierId = Integer.parseInt(request.getParameter("supplierId").toString());
 		int isGst = ph.getSupplierGstStatus(supplierId);
 		out.print(isGst);
+	}
+
+////////////////////////
+if(Status == 8)
+	{
+		String productName = request.getParameter("productName");
+		String productCode = request.getParameter("productCode");
+		String categoryIdParam = request.getParameter("categoryId");
+		String brandIdParam = request.getParameter("brandId");
+		String unitIdParam = request.getParameter("unitId");
+		String hsn = request.getParameter("hsn");
+		String costParam = request.getParameter("cost");
+		String mrpParam = request.getParameter("mrp");
+		String gstParam = request.getParameter("gst");
+
+		if (productName == null || productName.trim().isEmpty()) {
+			out.print("ERROR<#>Product name is required");
+			return;
+		}
+
+		int categoryId = 0;
+		int brandId = 0;
+		int unitId = 0;
+		int gst = 0;
+		double cost = 0.0;
+		double mrp = 0.0;
+
+		try {
+			categoryId = Integer.parseInt(categoryIdParam);
+			brandId = Integer.parseInt(brandIdParam);
+			unitId = Integer.parseInt(unitIdParam);
+			cost = Double.parseDouble(costParam);
+			mrp = Double.parseDouble(mrpParam);
+			gst = Integer.parseInt(gstParam);
+		} catch (Exception e) {
+			out.print("ERROR<#>Invalid input values");
+			return;
+		}
+
+		if (categoryId <= 0 || brandId <= 0 || unitId <= 0) {
+			out.print("ERROR<#>Please select category, brand, and unit");
+			return;
+		}
+
+		if (cost < 0 || mrp < 0) {
+			out.print("ERROR<#>Cost and MRP must be valid numbers");
+			return;
+		}
+
+		if (productCode == null || productCode.trim().isEmpty()) {
+			productCode = "0";
+		}
+
+		if (hsn != null && hsn.trim().isEmpty()) {
+			hsn = null;
+		}
+
+		try {
+			ph.addProduct(productName.trim(), categoryId, brandId, productCode.trim(), cost, mrp, 0, 0.0, BigDecimal.ZERO, uid, gst, unitId, hsn, 0.0);
+			out.print("SUCCESS<#>" + productName.trim() + "<#>" + productCode.trim());
+		} catch (Exception e) {
+			out.print("ERROR<#>" + e.getMessage());
+		}
 	}
 
 ////////////////////////

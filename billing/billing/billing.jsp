@@ -85,6 +85,11 @@
                                             <i class="fa-solid fa-clock"></i> HOLD LIST
                                         </button>
                                     </div>
+                                    <div class="col-2">
+                                        <button class="btn btn-outline-primary btn-sm w-100" onclick="window.location.href='<%=contextPaths%>/admin/Exchange/page.jsp'">
+                                            <i class="fas fa-exchange-alt"></i> EXCHANGE
+                                        </button>
+                                    </div>
                                     <!-- Hidden default values -->
                                     <input type="hidden" id="isTaxBill" value="1" />
                                     <input type="hidden" id="isCommission" value="0" />

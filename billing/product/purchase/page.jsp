@@ -1,6 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ page import="java.util.*, javax.servlet.http.*" %>
 <jsp:useBean id="poBean" class="product.purchaseOrderBean" />
+<jsp:useBean id="prodBean" class="product.productBean" />
 <%
     // Check if receiving goods from PO
     int poId = 0;
@@ -10,6 +11,9 @@
     Vector advancePayment = null;
     double advancePaid = 0;
     double advanceBalance = 0;
+    Vector categories = new Vector();
+    Vector brands = new Vector();
+    Vector units = new Vector();
     
     String poIdParam = request.getParameter("poId");
     if (poIdParam != null && !poIdParam.isEmpty()) {
@@ -41,6 +45,14 @@
             mode = "standalone";
             out.println("<!-- Error loading PO: " + e.getMessage() + " -->");
         }
+    }
+
+    try {
+        categories = prodBean.getCategoryName();
+        brands = prodBean.getBrandsName();
+        units = prodBean.getUnits();
+    } catch (Exception e) {
+        out.println("<!-- Error loading product modal data: " + e.getMessage() + " -->");
     }
 %>
 
@@ -86,6 +98,14 @@
     .table-fixed-layout th:nth-child(15), .table-fixed-layout td:nth-child(15) { width: 90px; }
     .table-fixed-layout th:nth-child(16), .table-fixed-layout td:nth-child(16) { width: 100px; }
     .table-fixed-layout th:nth-child(17), .table-fixed-layout td:nth-child(17) { width: 90px; }
+
+    /* Hide Pack and Qty/Pk columns (direct Qty entry mode) */
+    .table-fixed-layout th:nth-child(5),
+    .table-fixed-layout td:nth-child(5),
+    .table-fixed-layout th:nth-child(6),
+    .table-fixed-layout td:nth-child(6) {
+        display: none;
+    }
 </style>
 <body style="height: 100vh; overflow: hidden;" onload="Load();loadPOItems()">
 
@@ -148,7 +168,7 @@
                         <th>History</th>
                         <th>Pack</th>
                         <th>Qty/Pk</th>
-                        <th>Total</th>
+                        <th>Qty</th>
                         <th>Free</th>
                         <th>Cost</th>
                         <th>MRP</th>
@@ -232,10 +252,101 @@
                 </div>
                 <div class="row g-1 mt-1">
                     <div class="col-md-2">
+                        <button type="button" class="btn btn-outline-primary w-100 h-100" onclick="openAddProductModal()">
+                            <i class="fas fa-plus me-2"></i>Add Product
+                        </button>
+                    </div>
+                    <div class="col-md-2">
                         <button type="button" class="btn btn-outline-violet w-100 h-100" id="saveBtn" onclick="savePurchaseBill()">
                             <i class="fas fa-save me-2"></i>Save
                         </button>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Product Modal -->
+    <div class="modal fade" id="addProductModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-box-open me-2"></i>Add Product</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-2">
+                        <div class="col-md-6">
+                            <label class="form-label">Category <span class="text-danger">*</span></label>
+                            <select class="form-select" id="modalCategoryId">
+                                <option value="">Select Category</option>
+                                <% for (int i = 0; i < categories.size(); i++) {
+                                    Vector cat = (Vector) categories.get(i);
+                                    String catName = cat.get(0).toString();
+                                    String catId = cat.get(1).toString();
+                                %>
+                                <option value="<%=catId%>"><%=catName%></option>
+                                <% } %>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Brand <span class="text-danger">*</span></label>
+                            <select class="form-select" id="modalBrandId">
+                                <option value="">Select Brand</option>
+                                <% for (int i = 0; i < brands.size(); i++) {
+                                    Vector brand = (Vector) brands.get(i);
+                                    String brandName = brand.get(0).toString();
+                                    String brandId = brand.get(1).toString();
+                                %>
+                                <option value="<%=brandId%>"><%=brandName%></option>
+                                <% } %>
+                            </select>
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label">Product Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="modalProductName" placeholder="Enter product name">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Product Code</label>
+                            <input type="text" class="form-control" id="modalProductCode" placeholder="Enter code">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Unit <span class="text-danger">*</span></label>
+                            <select class="form-select" id="modalUnitId">
+                                <option value="">Select Unit</option>
+                                <% for (int i = 0; i < units.size(); i++) {
+                                    Vector unit = (Vector) units.get(i);
+                                    String unitName = unit.get(0).toString();
+                                    String unitId = unit.get(1).toString();
+                                    String selectedUnit = (unitName.equalsIgnoreCase("Nos") || unitName.equalsIgnoreCase("PCS")) ? "selected" : "";
+                                %>
+                                <option value="<%=unitId%>" <%=selectedUnit%>><%=unitName%></option>
+                                <% } %>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Cost <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" id="modalCost" min="0" step="0.001" value="0">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">MRP <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" id="modalMrp" min="0" step="0.001" value="0">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">GST %</label>
+                            <input type="number" class="form-control" id="modalGst" min="0" step="1" value="0">
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label">HSN</label>
+                            <input type="text" class="form-control" id="modalHsn" placeholder="Optional HSN">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="saveNewProductBtn" onclick="saveProductFromModal()">
+                        <i class="fas fa-check me-1"></i>Save Product
+                    </button>
                 </div>
             </div>
         </div>
@@ -363,9 +474,9 @@
                 + "<td class='text-center'><button type='button' class='btn btn-sm btn-danger' id='_delProcRow_" + proRowCount + "' onclick='deleteProductRow(this);'><i class='fas fa-trash'></i></button></td>"
                 + '<td><input type="text" class="form-control form-control-sm" id="_productName_' + proRowCount + '" name="_productName_' + proRowCount + '" value="' + escapedName + '" readonly></td>'
                 + "<td class='text-center'><button type='button' class='btn btn-sm btn-info' id='_historyBtn_" + proRowCount + "' onclick='viewPurchaseHistory(" + proRowCount + ");'><i class='fas fa-history'></i></button></td>"
-                + "<td><input type='text' class='form-control form-control-sm' id='_pack_" + proRowCount + "' name='_pack_" + proRowCount + "' value='" + itemData.pack + "' onkeyup='calculateRow(" + proRowCount + ");'></td>"
-                + "<td><input type='text' class='form-control form-control-sm' id='_qtyperpack_" + proRowCount + "' name='_qtyperpack_" + proRowCount + "' value='" + itemData.qtyperpack + "' onkeyup='calculateRow(" + proRowCount + ");'></td>"
-                + "<td><div class='d-flex flex-column'><div class='d-flex align-items-center gap-1'><input type='text' class='form-control form-control-sm' id='_totqty_" + proRowCount + "' name='_totqty_" + proRowCount + "' value='0' readonly><span class='text-muted small' id='_totunit_" + proRowCount + "'></span></div><small class='text-primary' id='_convtotqty_" + proRowCount + "'></small></div></td>"
+                + "<td><input type='text' class='form-control form-control-sm' id='_pack_" + proRowCount + "' name='_pack_" + proRowCount + "' value='" + itemData.pack + "' readonly></td>"
+                + "<td><input type='text' class='form-control form-control-sm' id='_qtyperpack_" + proRowCount + "' name='_qtyperpack_" + proRowCount + "' value='" + itemData.qtyperpack + "' readonly></td>"
+                + "<td><div class='d-flex flex-column'><div class='d-flex align-items-center gap-1'><input type='text' class='form-control form-control-sm' id='_totqty_" + proRowCount + "' name='_totqty_" + proRowCount + "' value='" + itemData.pendingQty + "' onkeyup='calculateRow(" + proRowCount + ");'><span class='text-muted small' id='_totunit_" + proRowCount + "'></span></div><small class='text-primary' id='_convtotqty_" + proRowCount + "'></small></div></td>"
                 + "<td><input type='text' class='form-control form-control-sm' id='_freeqty_" + proRowCount + "' name='_freeqty_" + proRowCount + "' value='" + itemData.free + "' onkeyup='calculateRow(" + proRowCount + ");'></td>"
                 + "<td><div class='d-flex flex-column'><input type='text' class='form-control form-control-sm' id='_cost_" + proRowCount + "' name='_cost_" + proRowCount + "' value='" + itemData.cost + "' onkeyup='calculateRow(" + proRowCount + ");'><small class='text-info' id='_costperconv_" + proRowCount + "'></small></div></td>"
                 + "<td><div class='d-flex flex-column'><input type='text' class='form-control form-control-sm' id='_mrp_" + proRowCount + "' name='_mrp_" + proRowCount + "' value='" + itemData.mrp + "' onkeyup='calculateRow(" + proRowCount + ");'><small class='text-info' id='_mrpperconv_" + proRowCount + "'></small></div></td>"
