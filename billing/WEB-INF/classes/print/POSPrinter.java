@@ -358,7 +358,7 @@ public class POSPrinter {
         for (Vector<Object> prod : billDetails) {
             pdfSno++;
             String itemName = prod.get(0).toString();
-            String itemCode = (prod.size() > 7 && prod.get(7) != null) ? prod.get(7).toString() : "";
+            String itemCode = (prod.size() > 10 && prod.get(10) != null) ? prod.get(10).toString() : "";
             double qty = Double.parseDouble(prod.get(1).toString());
             double itemPrice = Double.parseDouble(prod.get(2).toString());
             double itemDisc = Double.parseDouble(prod.get(3).toString());
@@ -729,7 +729,7 @@ public class POSPrinter {
         for (Vector<Object> prod : billDetails) {
             sno++;
             String itemName = prod.get(0).toString();
-            String itemCode = (prod.size() > 7 && prod.get(7) != null) ? prod.get(7).toString() : "";
+            String itemCode = (prod.size() > 10 && prod.get(10) != null) ? prod.get(10).toString() : "";
             double qty = Double.parseDouble(prod.get(1).toString());
             double itemPrice = Double.parseDouble(prod.get(2).toString());
             double itemDisc = Double.parseDouble(prod.get(3).toString());
@@ -949,7 +949,7 @@ public class POSPrinter {
         for (Vector<Object> prod : billDetails) {
             sno++;
             String itemName = prod.get(0).toString();
-            String itemCode = (prod.size() > 7 && prod.get(7) != null) ? prod.get(7).toString() : "";
+            String itemCode = (prod.size() > 10 && prod.get(10) != null) ? prod.get(10).toString() : "";
             double qty = Double.parseDouble(prod.get(1).toString());
             double itemPrice = Double.parseDouble(prod.get(2).toString());
             double itemDisc = Double.parseDouble(prod.get(3).toString());

@@ -6,34 +6,33 @@
            Customer Care:: 8056191358           
              GSTIN: 33ABBFR0799K1ZW             
 ------------------------------------------------
-Bill: 26-1                   01-05-2026 18:58:04
+Bill: 26-2                   11-05-2026 21:42:50
 Cust: -
 ------------------------------------------------
 ITEM                     QTY    DISC         AMT
                         RATE    GST%      GSTAMT
 ------------------------------------------------
-1.DUPATTA               2.00   20.00      878.00
-                      449.00      5%       41.81
+1.DUPATTA               1.00    0.00      449.00
+  JAST0801            449.00      5%       21.38
 
 ------------------------------------------------
-Items:                                         2
-Item Disc:                             -Rs 20.00
+Items:                                         1
 ------------------------------------------------
-TOTAL:                                 Rs 878.00
+TOTAL:                                 Rs 449.00
 ------------------------------------------------
-Cash Paid:                             Rs 878.00
+Cash Paid:                             Rs 449.00
 ------------------------------------------------
                   GST SUMMARY                   
 ------------------------------------------------
 Base Amt            SGST        CGST       TOTAL
-836.19             20.90       20.90      878.00
+427.62             10.69       10.69      449.00
 ------------------------------------------------
-Total GST   :                           Rs 41.81
-Total Sales :                          Rs 898.00
-Total Savings:                          Rs 20.00
-Nett Sales  :                          Rs 878.00
+Total GST   :                           Rs 21.38
+Total Sales :                          Rs 449.00
+Total Savings:                           Rs 0.00
+Nett Sales  :                          Rs 449.00
 ------------------------------------------------
-    EIGHT HUNDRED SEVENTY EIGHT RUPEES ONLY     
+      FOUR HUNDRED FORTY NINE RUPEES ONLY       
 ------------------------------------------------
              THANK YOU, VISIT AGAIN             
      No Refund, No Exchange for Offer Items     

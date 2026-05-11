@@ -1038,7 +1038,7 @@ public Vector getBillDetailsUsingNo(String bill) throws Exception {
     try {
         con = util.DBConnectionManager.getConnectionFromPool();
         
-        String sql = "SELECT c.`name`,b.`qty`,b.`price`,b.`disc`,b.`total`,b.gst,d.name AS category_name,c.hsn,IFNULL(u.name,'') AS unit_name,IFNULL(u.convertion_unit,'') AS convertion_unit FROM `prod_bill` a "
+String sql = "SELECT c.`name`,b.`qty`,b.`price`,b.`disc`,b.`total`,b.gst,d.name AS category_name,c.hsn,IFNULL(u.name,'') AS unit_name,IFNULL(u.convertion_unit,'') AS convertion_unit,IFNULL(c.code,'') AS item_code FROM `prod_bill` a "
 					+"	JOIN `prod_bill_details` b ON b.`bill_id`=a.`id` "
 					+"	JOIN `prod_product` c ON c.id=b.`prod_id` "
 					+"	LEFT JOIN `prod_category` d ON d.id=c.category_id "
@@ -1061,6 +1061,7 @@ public Vector getBillDetailsUsingNo(String bill) throws Exception {
             row.addElement(rs.getString(8)); // hsn
             row.addElement(rs.getString(9)); // unit_name
             row.addElement(rs.getString(10)); // convertion_unit
+            row.addElement(rs.getString(11)); // item_code
            
             vec.add(row);
         }

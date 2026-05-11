@@ -379,7 +379,9 @@ public class POSPrinter {
             gstWiseCGST.put(gstPer, gstWiseCGST.get(gstPer) + cgst);
             gstWiseSGST.put(gstPer, gstWiseSGST.get(gstPer) + sgst);
             
+            String itemCode = prod.size() > 10 ? prod.get(10).toString() : "";
             String displayName = gstPer > 0 ? itemName + " (" + gstPer + "%)" : itemName;
+            if (!itemCode.isEmpty()) displayName = displayName + "\n" + itemCode;
             addPdfCell(itemTable, displayName, fontSmall, Element.ALIGN_LEFT);
             addPdfCell(itemTable, prod.get(1).toString(), fontSmall, Element.ALIGN_CENTER);
             addPdfCell(itemTable, df.format(itemPrice), fontSmall, Element.ALIGN_RIGHT);
@@ -708,6 +710,10 @@ public class POSPrinter {
             
             // Print item
             sb.append(formatItemRow(itemName, prod.get(1).toString(), df.format(itemPrice), df.format(itemTotal), gstPer));
+            String itemCode2 = prod.size() > 10 ? prod.get(10).toString() : "";
+            if (!itemCode2.isEmpty()) {
+                sb.append("  ").append(itemCode2).append("\n");
+            }
             if (itemDisc > 0) {
                 sb.append(padLeft("Disc: -" + df.format(itemDisc), RECEIPT_WIDTH)).append("\n");
             }
@@ -909,6 +915,10 @@ public class POSPrinter {
             
             // Print item
             writeString(baos, formatItemRow(itemName, prod.get(1).toString(), df.format(itemPrice), df.format(itemTotal), gstPer));
+            String itemCode3 = prod.size() > 10 ? prod.get(10).toString() : "";
+            if (!itemCode3.isEmpty()) {
+                writeString(baos, "  " + itemCode3 + "\n");
+            }
             if (itemDisc > 0) {
                 writeString(baos, padLeft("Disc: -" + df.format(itemDisc), RECEIPT_WIDTH) + "\n");
             }
