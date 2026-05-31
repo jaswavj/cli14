@@ -6922,7 +6922,8 @@ public Vector getPurchaseDetailsForEdit(int purchaseId) throws Exception {
                      "pd.pack, pd.qtypack, pd.quantity, pd.free, " +
                      "pd.rate, pd.mrp, pd.totalamt, pd.tax, " +
                      "pd.cgst_amt, pd.sgst_amt, pd.netamt, " +
-                     "IFNULL(pd.is_cancelled, 0) AS is_cancelled " +
+                     "IFNULL(pd.is_cancelled, 0) AS is_cancelled, " +
+                     "COALESCE(p.code, '') AS product_code " +
                      "FROM prod_purchase_details pd " +
                      "JOIN prod_product p ON pd.prods_id = p.id " +
                      "WHERE pd.prid = ?";
@@ -6946,6 +6947,7 @@ public Vector getPurchaseDetailsForEdit(int purchaseId) throws Exception {
             row.addElement(rs.getDouble(13));  // 12 sgst_amt
             row.addElement(rs.getDouble(14));  // 13 netamt
             row.addElement(rs.getInt(15));     // 14 is_cancelled
+            row.addElement(rs.getString(16));  // 15 product_code
             vec.add(row);
         }
     } finally {

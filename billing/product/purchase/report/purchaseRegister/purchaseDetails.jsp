@@ -135,6 +135,7 @@ String purchaseId = request.getParameter("id");
                             Vector item = (Vector) purchaseDetails.get(i);
                             int    detId      = (Integer) item.elementAt(0);
                             String prodName   = (String)  item.elementAt(1);
+                            String prodCode   = (String)  item.elementAt(15);
                             double qty        = (Double)  item.elementAt(5);
                             double free       = (Double)  item.elementAt(6);
                             double rate       = (Double)  item.elementAt(7);
@@ -150,7 +151,9 @@ String purchaseId = request.getParameter("id");
                     %>
                     <tr class="<%= cancelled==1 ? "table-secondary text-decoration-line-through text-muted" : "" %>">
                         <td><%= i+1 %></td>
-                        <td><%= prodName %> <% if (cancelled==1) { %><span class="badge bg-danger ms-1">Cancelled</span><% } %></td>
+                        <td>
+                            <% if (prodCode != null && !prodCode.isEmpty()) { %><small class="text-muted me-1">[<%= prodCode %>]</small><% } %><%= prodName %> <% if (cancelled==1) { %><span class="badge bg-danger ms-1">Cancelled</span><% } %>
+                        </td>
                         <td class="text-end"><%= String.format("%.0f",(Double)item.elementAt(3)) %></td>
                         <td class="text-end"><%= String.format("%.3f",(Double)item.elementAt(4)) %></td>
                         <td class="text-end"><%= String.format("%.3f", qty) %></td>

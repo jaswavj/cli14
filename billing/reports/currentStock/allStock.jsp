@@ -65,6 +65,8 @@
                         <th style="padding: 0.4rem; font-size: 0.85rem; font-weight: 600; color: #4a5568; text-align: center;">Category</th>
                         <th style="padding: 0.4rem; font-size: 0.85rem; font-weight: 600; color: #4a5568; text-align: center;">Items Count</th>
                         <th style="padding: 0.4rem; font-size: 0.85rem; font-weight: 600; color: #4a5568; text-align: center;">Total Stock</th>
+                        <th style="padding: 0.4rem; font-size: 0.85rem; font-weight: 600; color: #4a5568; text-align: right;">Cost/Unit</th>
+                        <th style="padding: 0.4rem; font-size: 0.85rem; font-weight: 600; color: #4a5568; text-align: right;">MRP/Unit</th>
                         <th style="padding: 0.4rem; font-size: 0.85rem; font-weight: 600; color: #4a5568; text-align: right;">Total Cost Value</th>
                         <th style="padding: 0.4rem; font-size: 0.85rem; font-weight: 600; color: #4a5568; text-align: right;">Total MRP Value</th>
                     </tr>
@@ -146,6 +148,8 @@
                         <td style="padding: 0.4rem; text-align: center;"><%=catName%></td>
                         <td style="padding: 0.4rem; text-align: center;"><%=itemCount%></td>
                         <td style="padding: 0.4rem; text-align: center;"><%=String.format("%.2f", catTotalStock)%></td>
+                        <td style="padding: 0.4rem; text-align: right;">-</td>
+                        <td style="padding: 0.4rem; text-align: right;">-</td>
                         <td style="padding: 0.4rem; text-align: right;">₹<%=String.format("%.3f", catTotalCost)%></td>
                         <td style="padding: 0.4rem; text-align: right;">₹<%=String.format("%.3f", catTotalMRP)%></td>
                     </tr>
@@ -166,6 +170,8 @@
                         </td>
                         <td style="text-align: center; padding: 0.4rem;">-</td>
                         <td style="text-align: center; padding: 0.4rem;"><%=String.format("%.2f", itemStock)%></td>
+                        <td style="text-align: right; padding: 0.4rem;">₹<%=String.format("%.3f", itemCost)%></td>
+                        <td style="text-align: right; padding: 0.4rem;">₹<%=String.format("%.3f", itemMRP)%></td>
                         <td style="text-align: right; padding: 0.4rem;">₹<%=String.format("%.3f", itemTotalCost)%></td>
                         <td style="text-align: right; padding: 0.4rem;">₹<%=String.format("%.3f", itemTotalMRP)%></td>
                     </tr>
@@ -177,7 +183,7 @@
                     if (categoryData.isEmpty()) {
                     %>
                     <tr>
-                        <td colspan="6" class="text-center text-muted">
+                        <td colspan="8" class="text-center text-muted">
                             <strong>No stock data found.</strong><br>
                             There are no products with current stock available.
                         </td>
@@ -190,6 +196,8 @@
                         <td style="padding: 0.4rem; text-align: center;">TOTAL</td>
                         <td style="padding: 0.4rem; text-align: center;"><%=categoryData.size()%></td>
                         <td style="padding: 0.4rem; text-align: center;">-</td>
+                        <td style="padding: 0.4rem; text-align: right;">-</td>
+                        <td style="padding: 0.4rem; text-align: right;">-</td>
                         <td style="padding: 0.4rem; text-align: right;">₹<%=String.format("%.3f", grandTotalCost)%></td>
                         <td style="padding: 0.4rem; text-align: right;">₹<%=String.format("%.3f", grandTotalMRP)%></td>
                     </tr>
