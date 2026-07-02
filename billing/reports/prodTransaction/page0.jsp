@@ -50,6 +50,7 @@
         <tr style="background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%); border-bottom: 2px solid #e2e8f0;">
             <th style="padding: 0.4rem; font-size: 0.85rem; font-weight: 600; color: #4a5568; text-align: center;">S.No</th>
             <th style="padding: 0.4rem; font-size: 0.85rem; font-weight: 600; color: #4a5568;"><%=head3%> Name</th>
+            <th style="padding: 0.4rem; font-size: 0.85rem; font-weight: 600; color: #4a5568;"><%=head3%> Code</th>
             <th style="padding: 0.4rem; font-size: 0.85rem; font-weight: 600; color: #4a5568; text-align: center;">Stock in</th>
             <th style="padding: 0.4rem; font-size: 0.85rem; font-weight: 600; color: #4a5568; text-align: center;">Stock out</th>
             <th style="padding: 0.4rem; font-size: 0.85rem; font-weight: 600; color: #4a5568; text-align: center;">Stock now</th>
@@ -107,6 +108,7 @@
         <tr>
             <td><%=i+1%></td>
             <td ><%=row.elementAt(0)%></td>
+            <td><%= row.size() > 10 && row.elementAt(10) != null ? row.elementAt(10) : "" %></td>
             <td <%=color%>><%=row.elementAt(1)%> <%=(row.size() > 9 && row.elementAt(9) != null && !row.elementAt(9).toString().isEmpty()) ? row.elementAt(9) : (row.size() > 8 && row.elementAt(8) != null ? row.elementAt(8) : "")%></td>
             <td <%=colors%>><%=row.elementAt(2)%> <%=(row.size() > 9 && row.elementAt(9) != null && !row.elementAt(9).toString().isEmpty()) ? row.elementAt(9) : (row.size() > 8 && row.elementAt(8) != null ? row.elementAt(8) : "")%></td>
             <td><%=row.elementAt(3)%> <%=(row.size() > 9 && row.elementAt(9) != null && !row.elementAt(9).toString().isEmpty()) ? row.elementAt(9) : (row.size() > 8 && row.elementAt(8) != null ? row.elementAt(8) : "")%></td>

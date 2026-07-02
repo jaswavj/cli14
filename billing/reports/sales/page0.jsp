@@ -57,15 +57,14 @@ String contextPath = request.getContextPath();
         <tr>
             <th style="padding: 0.4rem; font-weight: 600; color: #4a5568; border: none; font-size: 0.85rem;">S.No</th>
             <th style="padding: 0.4rem; font-weight: 600; color: #4a5568; border: none; font-size: 0.85rem;">Bill No</th>
-            <th style="padding: 0.4rem; font-weight: 600; color: #4a5568; border: none; font-size: 0.85rem;">Patient Name</th>
+            <th style="padding: 0.4rem; font-weight: 600; color: #4a5568; border: none; font-size: 0.85rem;">Customer Name</th>
             <th style="padding: 0.4rem; font-weight: 600; color: #4a5568; border: none; font-size: 0.85rem;">Total</th>
-            <!--th>Discount</th-->
+            <th style="padding: 0.4rem; font-weight: 600; color: #4a5568; border: none; font-size: 0.85rem;">Disc</th>
             <th style="padding: 0.4rem; font-weight: 600; color: #4a5568; border: none; font-size: 0.85rem;">Payable</th>
             <th style="padding: 0.4rem; font-weight: 600; color: #4a5568; border: none; font-size: 0.85rem;">Paid</th>
             <% if(modeId !=2) { %><th style="padding: 0.4rem; font-weight: 600; color: #4a5568; border: none; font-size: 0.85rem;">cash</th><%}%>
             <% if(modeId !=1) { %><th style="padding: 0.4rem; font-weight: 600; color: #4a5568; border: none; font-size: 0.85rem;">Bank</th><% } %>
-            <th style="padding: 0.4rem; font-weight: 600; color: #4a5568; border: none; font-size: 0.85rem;">Balance</th>
-            <th style="padding: 0.4rem; font-weight: 600; color: #4a5568; border: none; font-size: 0.85rem;">Pending Balance</th>
+            <th style="padding: 0.4rem; font-weight: 600; color: #4a5568; border: none; font-size: 0.85rem;">Qty</th>
            <!--<% if(modeId !=1) { %><th>Mode</th><% } %>-->
             <th style="padding: 0.4rem; font-weight: 600; color: #4a5568; border: none; font-size: 0.85rem;">Date</th>
             <th style="padding: 0.4rem; font-weight: 600; color: #4a5568; border: none; font-size: 0.85rem;">Time</th>
@@ -82,8 +81,7 @@ String contextPath = request.getContextPath();
         double finPaid=0.0;
         double finCash=0.0;
         double finBank=0.0;
-        double finBalance=0.0;
-        double finCurBalance=0.0;
+        double finQty=0.0;
         for(int i=0;i< vec.size();i++)
 		{
             Vector row		= (Vector)vec.elementAt(i);
@@ -94,8 +92,7 @@ String contextPath = request.getContextPath();
             double paid        = Double.parseDouble(row.elementAt(4).toString());
             double cash       = Double.parseDouble(row.elementAt(10).toString());
             double bank       = Double.parseDouble(row.elementAt(11).toString());
-            double Balance       = Double.parseDouble(row.elementAt(12).toString());
-            double curBalance       = Double.parseDouble(row.elementAt(13).toString());
+            double billQty    = row.size() > 16 && row.elementAt(16) != null ? Double.parseDouble(row.elementAt(16).toString()) : 0.0;
             String billNo    = row.elementAt(0).toString();
             finTotal+=totalAmt;
             finDiscount+=discount;  
@@ -103,8 +100,7 @@ String contextPath = request.getContextPath();
             finPaid+=paid;
             finCash+=cash;
             finBank+=bank;
-            finBalance+=Balance;
-            finCurBalance+=curBalance;
+            finQty+=billQty;
             String cusPhone = row.elementAt(15).toString();
             
 
@@ -120,13 +116,12 @@ String contextPath = request.getContextPath();
             </td>
             <td style="padding: 0.4rem; color: #718096; border: none; font-size: 0.9rem;"><a href="https://wa.me/<%=cusPhone%>" target="_blank" style="color: #25D366; text-decoration: none; font-weight: 500;"><%=row.elementAt(14)%></a></td>
             <td style="padding: 0.4rem; color: #718096; border: none; font-size: 0.9rem;"><%=row.elementAt(1)%></td>
-            <!--td><%=row.elementAt(2)%></td-->
+            <td style="padding: 0.4rem; color: #718096; border: none; font-size: 0.9rem;"><%=row.elementAt(2)%></td>
             <td style="padding: 0.4rem; color: #718096; border: none; font-size: 0.9rem;"><%=row.elementAt(3)%></td>
             <td style="padding: 0.4rem; color: #718096; border: none; font-size: 0.9rem;"><%=row.elementAt(4)%></td>
             <% if(modeId !=2) { %><td style="padding: 0.4rem; color: #718096; border: none; font-size: 0.9rem;"><%=row.elementAt(10)%></td><%}%>
             <% if(modeId !=1) { %><td style="padding: 0.4rem; color: #718096; border: none; font-size: 0.9rem;"><%=row.elementAt(11)%></td><%}%>
-            <td style="padding: 0.4rem; color: #718096; border: none; font-size: 0.9rem;"><%=row.elementAt(12)%></td>
-            <td style="padding: 0.4rem; color: #718096; border: none; font-size: 0.9rem;"><%=row.elementAt(13)%></td>
+            <td style="padding: 0.4rem; color: #718096; border: none; font-size: 0.9rem;"><%= row.size() > 16 && row.elementAt(16) != null ? row.elementAt(16) : "0" %></td>
             <!--<% if(modeId !=1) { %><td><%=row.elementAt(9)%></td><%}%>-->
             <td style="padding: 0.4rem; color: #718096; border: none; font-size: 0.9rem;"><%=row.elementAt(5)%></td>
             <td style="padding: 0.4rem; color: #718096; border: none; font-size: 0.9rem;"><%=row.elementAt(6)%></td>
@@ -140,14 +135,13 @@ String contextPath = request.getContextPath();
         <tr style="background: #f7fafc; border-top: 2px solid #4a5568;">
             <td colspan="3" style="padding: 0.4rem; font-weight: 600; color: #4a5568; border: none; font-size: 0.9rem;"><strong>Grand Total</strong></td>
             <td style="padding: 0.4rem; font-weight: 600; color: #4a5568; border: none; font-size: 0.9rem;"><strong><%=String.format("%.3f", finTotal)%></strong></td>
-            <!--td><strong><%=String.format("%.3f", finDiscount)%></strong></td-->
+            <td style="padding: 0.4rem; font-weight: 600; color: #4a5568; border: none; font-size: 0.9rem;"><strong><%=String.format("%.3f", finDiscount)%></strong></td>
             <td style="padding: 0.4rem; font-weight: 600; color: #4a5568; border: none; font-size: 0.9rem;"><strong><%=String.format("%.3f", finPayable)%></strong></td>
             <td style="padding: 0.4rem; font-weight: 600; color: #4a5568; border: none; font-size: 0.9rem;"><strong><%=String.format("%.3f", finPaid)%></strong></td>
             <% if(modeId !=2) { %><td style="padding: 0.4rem; font-weight: 600; color: #4a5568; border: none; font-size: 0.9rem;"><strong><%=String.format("%.3f", finCash)%></strong></td><%}%>
             <% if(modeId !=1) { %><td style="padding: 0.4rem; font-weight: 600; color: #4a5568; border: none; font-size: 0.9rem;"><strong><%=String.format("%.3f", finBank)%></strong></td><%}%>
-            <td style="padding: 0.4rem; font-weight: 600; color: #4a5568; border: none; font-size: 0.9rem;"><strong><%=finBalance%></strong></td>
-            <td style="padding: 0.4rem; font-weight: 600; color: #4a5568; border: none; font-size: 0.9rem;"><strong><%=finCurBalance%></strong></td>
-            <% if(modeId !=1) { %><td style="padding: 0.4rem; border: none;"></td><%}%>
+            <td style="padding: 0.4rem; font-weight: 600; color: #4a5568; border: none; font-size: 0.9rem;"><strong><%=String.format("%.3f", finQty)%></strong></td>
+            <td style="padding: 0.4rem; border: none;"></td>
             <td style="padding: 0.4rem; border: none;"></td>
             <td style="padding: 0.4rem; border: none;"></td>
             

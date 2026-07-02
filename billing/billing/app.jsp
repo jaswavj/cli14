@@ -26,7 +26,9 @@ response.setDateHeader("Expires", 0);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BILLING APP</title>
-    <script src="../dist/js/jquery-3.6.0.min.js"></script>
+    <link rel="icon" type="image/jpeg" href="jasxbill.jpeg">
+	<style>*{margin:0;padding:0;box-sizing:border-box;}html,body{height:100%;overflow:hidden;}</style>
+
 </head>
 <body>
     
@@ -35,7 +37,8 @@ response.setDateHeader("Expires", 0);
                     width="100%" 
                     height="100%" 
                     frameborder="0"
-                    style="margin:0; padding:0; display:block; height: calc(107vh - 60px);">
+                    style="margin:0; padding:0; display:block; height: calc(107vh - 20px);">
+                
                 </iframe>
     <!--script>
         $(document).ready(function() {

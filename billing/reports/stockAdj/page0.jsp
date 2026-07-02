@@ -74,6 +74,7 @@
             <tr>
                 <th style="padding: 0.4rem; font-weight: 600; color: #4a5568; border: none; font-size: 0.85rem;">SI.NO</th>
                 <th style="padding: 0.4rem; font-weight: 600; color: #4a5568; border: none; font-size: 0.85rem;"><%=head3%></th>
+                <th style="padding: 0.4rem; font-weight: 600; color: #4a5568; border: none; font-size: 0.85rem;"><%=head3%> Code</th>
                 <th style="padding: 0.4rem; font-weight: 600; color: #4a5568; border: none; font-size: 0.85rem;">Action</th>
                 <th style="padding: 0.4rem; font-weight: 600; color: #4a5568; border: none; font-size: 0.85rem;">Stock</th>
                 <th style="padding: 0.4rem; font-weight: 600; color: #4a5568; border: none; font-size: 0.85rem;">Date</th>
@@ -92,6 +93,7 @@
 <tr style="border-bottom: 1px solid #f1f5f9; transition: all 0.2s;">
     <td style="padding: 0.4rem; color: #718096; border: none; font-size: 0.9rem;"><%=i+1 %></td>  <!-- id -->
     <td style="padding: 0.4rem; color: #718096; border: none; font-size: 0.9rem;"><%= row.get(2) %></td>  <!-- product_name -->
+    <td style="padding: 0.4rem; color: #718096; border: none; font-size: 0.9rem;"><%= row.size() > 12 && row.get(12) != null ? row.get(12) : "" %></td>  <!-- product_code -->
 
     <td style="padding: 0.4rem; color: #718096; border: none; font-size: 0.9rem;">
         <%

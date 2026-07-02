@@ -294,7 +294,7 @@ public Vector getsalesCashBankReport(String from,String to,int modeId,int typeId
         if(modeId == 0 && uid==0){
             pt = con.prepareStatement(
                 "SELECT a.bill_display,a.total,a.`prodDisc`+a.`extraDisc` AS discount,a.payable,a.paid,a.date,a.time,b.user_name, " +
-                "a.id,CASE WHEN a.paymentMode = 3 THEN CONCAT('CASH & ', MAX(d.type)) ELSE MAX(d.type) END AS TYPE,SUM(c.cash) as cash,SUM(c.bank) as bank,a.balance,a.currentBalance,a.cusName,a.cusPhn  " +
+                "a.id,CASE WHEN a.paymentMode = 3 THEN CONCAT('CASH & ', MAX(d.type)) ELSE MAX(d.type) END AS TYPE,SUM(c.cash) as cash,SUM(c.bank) as bank,a.balance,a.currentBalance,a.cusName,a.cusPhn, (SELECT IFNULL(SUM(bd.qty), 0) FROM prod_bill_details bd WHERE bd.bill_id = a.id) AS total_qty  " +
                 "FROM `prod_bill` a " +
                 "JOIN `users` b ON b.id=a.`uid` " +
                 "JOIN `prod_bill_payment` c ON c.bill_id=a.id " +
@@ -308,7 +308,7 @@ public Vector getsalesCashBankReport(String from,String to,int modeId,int typeId
         else if(modeId == 0 && uid!=0){
             pt = con.prepareStatement(
                 "SELECT a.bill_display,a.total,a.`prodDisc`+a.`extraDisc` AS discount,a.payable,a.paid,a.date,a.time,b.user_name, " +
-                "a.id,CASE WHEN a.paymentMode = 3 THEN CONCAT('CASH & ', MAX(d.type)) ELSE MAX(d.type) END AS TYPE,SUM(c.cash) as cash,SUM(c.bank) as bank,a.balance,a.currentBalance,a.cusName,a.cusPhn " +
+                "a.id,CASE WHEN a.paymentMode = 3 THEN CONCAT('CASH & ', MAX(d.type)) ELSE MAX(d.type) END AS TYPE,SUM(c.cash) as cash,SUM(c.bank) as bank,a.balance,a.currentBalance,a.cusName,a.cusPhn, (SELECT IFNULL(SUM(bd.qty), 0) FROM prod_bill_details bd WHERE bd.bill_id = a.id) AS total_qty " +
                 "FROM `prod_bill` a " +
                 "JOIN `users` b ON b.id=a.`uid` " +
                 "JOIN `prod_bill_payment` c ON c.bill_id=a.id " +
@@ -322,7 +322,7 @@ public Vector getsalesCashBankReport(String from,String to,int modeId,int typeId
         else if(modeId == 1 && uid==0){
             pt = con.prepareStatement(
                 "SELECT a.bill_display,a.total,a.`prodDisc`+a.`extraDisc` AS discount,a.payable,a.paid,a.date,a.time,b.user_name, " +
-                "a.id,CASE WHEN a.paymentMode = 3 THEN CONCAT('CASH & ', MAX(d.type)) ELSE MAX(d.type) END AS TYPE,SUM(c.cash) as cash,SUM(c.bank) as bank,a.balance,a.currentBalance,a.cusName,a.cusPhn " +
+                "a.id,CASE WHEN a.paymentMode = 3 THEN CONCAT('CASH & ', MAX(d.type)) ELSE MAX(d.type) END AS TYPE,SUM(c.cash) as cash,SUM(c.bank) as bank,a.balance,a.currentBalance,a.cusName,a.cusPhn, (SELECT IFNULL(SUM(bd.qty), 0) FROM prod_bill_details bd WHERE bd.bill_id = a.id) AS total_qty " +
                 "FROM `prod_bill` a " +
                 "JOIN `users` b ON b.id=a.`uid` " +
                 "JOIN `prod_bill_payment` c ON c.bill_id=a.id " +
@@ -335,7 +335,7 @@ public Vector getsalesCashBankReport(String from,String to,int modeId,int typeId
         }else if(modeId == 1 && uid!=0){
             pt = con.prepareStatement(
                 "SELECT a.bill_display,a.total,a.`prodDisc`+a.`extraDisc` AS discount,a.payable,a.paid,a.date,a.time,b.user_name, " +
-                "a.id,CASE WHEN a.paymentMode = 3 THEN CONCAT('CASH & ', MAX(d.type)) ELSE MAX(d.type) END AS TYPE,SUM(c.cash) as cash,SUM(c.bank) as bank,a.balance,a.currentBalance,a.cusName,a.cusPhn " +
+                "a.id,CASE WHEN a.paymentMode = 3 THEN CONCAT('CASH & ', MAX(d.type)) ELSE MAX(d.type) END AS TYPE,SUM(c.cash) as cash,SUM(c.bank) as bank,a.balance,a.currentBalance,a.cusName,a.cusPhn, (SELECT IFNULL(SUM(bd.qty), 0) FROM prod_bill_details bd WHERE bd.bill_id = a.id) AS total_qty " +
                 "FROM `prod_bill` a " +
                 "JOIN `users` b ON b.id=a.`uid` " +
                 "JOIN `prod_bill_payment` c ON c.bill_id=a.id " +
@@ -348,7 +348,7 @@ public Vector getsalesCashBankReport(String from,String to,int modeId,int typeId
         } else if(modeId == 2 && typeId==0 && uid==0) {
             pt = con.prepareStatement(
                 "SELECT a.bill_display,a.total,a.`prodDisc`+a.`extraDisc` AS discount,a.payable,a.paid,a.date,a.time,b.user_name, " +
-                "a.id,CASE WHEN a.paymentMode = 3 THEN CONCAT('CASH & ', MAX(d.type)) ELSE MAX(d.type) END AS TYPE ,SUM(c.cash) as cash,SUM(c.bank) as bank,a.balance,a.currentBalance,a.cusName,a.cusPhn " +
+                "a.id,CASE WHEN a.paymentMode = 3 THEN CONCAT('CASH & ', MAX(d.type)) ELSE MAX(d.type) END AS TYPE ,SUM(c.cash) as cash,SUM(c.bank) as bank,a.balance,a.currentBalance,a.cusName,a.cusPhn, (SELECT IFNULL(SUM(bd.qty), 0) FROM prod_bill_details bd WHERE bd.bill_id = a.id) AS total_qty " +
                 "FROM `prod_bill` a " +
                 "JOIN `users` b ON b.id=a.`uid` " +
                 "JOIN `prod_bill_payment` c ON c.bill_id=a.id " +
@@ -364,7 +364,7 @@ public Vector getsalesCashBankReport(String from,String to,int modeId,int typeId
         else if(modeId == 2 && typeId==0 && uid!=0) {
             pt = con.prepareStatement(
                 "SELECT a.bill_display,a.total,a.`prodDisc`+a.`extraDisc` AS discount,a.payable,a.paid,a.date,a.time,b.user_name, " +
-                "a.id,CASE WHEN a.paymentMode = 3 THEN CONCAT('CASH & ', MAX(d.type)) ELSE MAX(d.type) END AS TYPE ,SUM(c.cash) as cash,SUM(c.bank) as bank,a.balance,a.currentBalance,a.cusName,a.cusPhn " +
+                "a.id,CASE WHEN a.paymentMode = 3 THEN CONCAT('CASH & ', MAX(d.type)) ELSE MAX(d.type) END AS TYPE ,SUM(c.cash) as cash,SUM(c.bank) as bank,a.balance,a.currentBalance,a.cusName,a.cusPhn, (SELECT IFNULL(SUM(bd.qty), 0) FROM prod_bill_details bd WHERE bd.bill_id = a.id) AS total_qty " +
                 "FROM `prod_bill` a " +
                 "JOIN `users` b ON b.id=a.`uid` " +
                 "JOIN `prod_bill_payment` c ON c.bill_id=a.id " +
@@ -380,7 +380,7 @@ public Vector getsalesCashBankReport(String from,String to,int modeId,int typeId
         else if(modeId == 2 && typeId!=0 && uid==0) {
             pt = con.prepareStatement(
                 "SELECT a.bill_display,a.total,a.`prodDisc`+a.`extraDisc` AS discount,a.payable,a.paid,a.date,a.time,b.user_name, " +
-                "a.id,CASE WHEN a.paymentMode = 3 THEN CONCAT('CASH & ', MAX(d.type)) ELSE MAX(d.type) END AS TYPE ,SUM(c.cash) as cash,SUM(c.bank) as bank,a.balance,a.currentBalance,a.cusName,a.cusPhn " +
+                "a.id,CASE WHEN a.paymentMode = 3 THEN CONCAT('CASH & ', MAX(d.type)) ELSE MAX(d.type) END AS TYPE ,SUM(c.cash) as cash,SUM(c.bank) as bank,a.balance,a.currentBalance,a.cusName,a.cusPhn, (SELECT IFNULL(SUM(bd.qty), 0) FROM prod_bill_details bd WHERE bd.bill_id = a.id) AS total_qty " +
                 "FROM `prod_bill` a " +
                 "JOIN `users` b ON b.id=a.`uid` " +
                 "JOIN `prod_bill_payment` c ON c.bill_id=a.id " +
@@ -396,7 +396,7 @@ public Vector getsalesCashBankReport(String from,String to,int modeId,int typeId
         else if(modeId == 2 && typeId!=0 && uid!=0) {
             pt = con.prepareStatement(
                 "SELECT a.bill_display,a.total,a.`prodDisc`+a.`extraDisc` AS discount,a.payable,a.paid,a.date,a.time,b.user_name, " +
-                "a.id,CASE WHEN a.paymentMode = 3 THEN CONCAT('CASH & ', MAX(d.type)) ELSE MAX(d.type) END AS TYPE ,SUM(c.cash) as cash,SUM(c.bank) as bank,a.balance,a.currentBalance,a.cusName,a.cusPhn " +
+                "a.id,CASE WHEN a.paymentMode = 3 THEN CONCAT('CASH & ', MAX(d.type)) ELSE MAX(d.type) END AS TYPE ,SUM(c.cash) as cash,SUM(c.bank) as bank,a.balance,a.currentBalance,a.cusName,a.cusPhn, (SELECT IFNULL(SUM(bd.qty), 0) FROM prod_bill_details bd WHERE bd.bill_id = a.id) AS total_qty " +
                 "FROM `prod_bill` a " +
                 "JOIN `users` b ON b.id=a.`uid` " +
                 "JOIN `prod_bill_payment` c ON c.bill_id=a.id " +
@@ -429,6 +429,7 @@ public Vector getsalesCashBankReport(String from,String to,int modeId,int typeId
             vec1.addElement(rs.getString(14)); // curBalance
             vec1.addElement(rs.getString(15)); // cus Name
             vec1.addElement(rs.getString(16)); // Cus Number
+            vec1.addElement(rs.getString(17)); // total_qty
             vec.addElement(vec1);
         }
         return vec;
@@ -899,7 +900,8 @@ public Vector getStockAdj(String from, String to, int productId) throws Exceptio
         StringBuilder sql = new StringBuilder();
         sql.append("SELECT b.name,a.`stock_in`,a.`stock_out`,a.`stock_now`,a.`notes`,")
            .append("CONCAT(DATE_FORMAT(a.date, '%d-%m-%Y'),'/',a.time) AS DATETIME,")
-           .append("c.user_name,a.stockAdjType,IFNULL(u.name,'') AS unit_name,IFNULL(u.convertion_unit,'') AS convertion_unit ")
+           .append("c.user_name,a.stockAdjType,IFNULL(u.name,'') AS unit_name,IFNULL(u.convertion_unit,'') AS convertion_unit,")
+           .append("COALESCE(b.code, '') AS product_code ")
            .append("FROM prod_lifecycle a ")
            .append("JOIN prod_product b ON a.`product_id`=b.`id` ")
            .append("JOIN users c ON c.id=a.uid ")
@@ -933,6 +935,7 @@ public Vector getStockAdj(String from, String to, int productId) throws Exceptio
             vec1.addElement(rs.getString(8));
             vec1.addElement(rs.getString(9)); // unit_name
             vec1.addElement(rs.getString(10)); // convertion_unit
+            vec1.addElement(rs.getString(11)); // product_code
             vec.addElement(vec1);
         }
         return vec;

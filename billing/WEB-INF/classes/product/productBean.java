@@ -1186,6 +1186,58 @@ finally
 			}
 		}
 }
+public Vector getAllProductsWithStockReverse() throws Exception
+{
+	Connection con 			= null;
+	PreparedStatement pt 	= null;
+	ResultSet rs			= null;
+	try{
+		con						= util.DBConnectionManager.getConnectionFromPool();
+		
+	Vector major = new Vector();
+
+	pt = con.prepareStatement("SELECT a.`name`, b.`name`, c.`name`, a.id, a.code, IFNULL(pb.stock, 0), IFNULL(pb.id, 0) "
+								+"	FROM `prod_product` a "
+								+"	JOIN `prod_category` b ON b.`id`=a.`category_id` "
+								+"	JOIN `prod_brands` c ON c.id=a.`brand_id` "
+								+"	LEFT JOIN `prod_batch` pb ON pb.product_id = a.id "
+								+"	WHERE a.`is_active`=1 ORDER BY a.date DESC;");
+	rs = pt.executeQuery();
+	while(rs.next())
+		{
+		Vector vec = new Vector();
+			vec.addElement(rs.getString(1));
+			vec.addElement(rs.getString(2));
+			vec.addElement(rs.getString(3));
+			vec.addElement(rs.getString(4));
+			vec.addElement(rs.getString(5));
+			vec.addElement(rs.getString(6));
+			vec.addElement(rs.getString(7));
+		major.addElement(vec);
+		}
+		return major;
+	}
+finally
+		{
+		if (rs != null)
+			{
+      		try	 { rs.close(); } catch (SQLException e) { ; }
+      		rs = null;
+			}
+			
+		if (pt != null)
+			{
+      		try	 { pt.close(); } catch (SQLException e) { ; }
+      		pt = null;
+			}
+		    		
+		if(con!= null)			
+			{
+			try{con.close();}catch(Exception e){}
+			con = null;	
+			}
+		}
+}
 /////////////////////////////
 public int checkTheProductCodeExist(String code)throws Exception
 {
@@ -2800,7 +2852,8 @@ public Vector getStockAdjReport(String from, String to, int productId, int stock
 
         String sql = "SELECT psa.id, psa.product_id, p.name AS product_name, psa.batch_id, " +
                      "psa.stockType, psa.stock, psa.date, psa.time, psa.notes, " +
-                     "psa.uid, u.user_name, IFNULL(pu.convertion_unit,'') AS convertion_unit " +
+                     "psa.uid, u.user_name, IFNULL(pu.convertion_unit,'') AS convertion_unit, " +
+                     "COALESCE(p.code, '') AS product_code " +
                      "FROM prod_stock_adjustment psa " +
                      "JOIN prod_product p ON psa.product_id = p.id " +
                      "JOIN users u ON psa.uid = u.id " +
@@ -2845,6 +2898,7 @@ public Vector getStockAdjReport(String from, String to, int productId, int stock
             vec1.addElement(rs.getString(10)); // uid
             vec1.addElement(rs.getString(11)); // user_name
             vec1.addElement(rs.getString(12)); // convertion_unit
+            vec1.addElement(rs.getString(13)); // product_code
 
             vec.addElement(vec1);
         }
